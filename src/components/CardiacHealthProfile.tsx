@@ -1,22 +1,32 @@
 import React, { useState } from 'react';
 import { 
   User, Heart, Activity, Pill, ShieldAlert, FileText, Plus, 
-  Trash2, Check, Eye, AlertCircle, Calendar, Sparkles
+  Trash2, Check, Eye, AlertCircle, Calendar, Sparkles, PhoneCall, Siren, Phone
 } from 'lucide-react';
-import { PatientUser, CardiacDocument } from '../types';
+import { PatientUser, CardiacDocument, ConsultationInquiry } from '../types';
 import { SAMPLE_DOCUMENTS } from '../data/mockData';
+import { MedicationScheduleView } from './MedicationScheduleView';
+import { DrugInteractionChecker } from './DrugInteractionChecker';
+import { EmergencyContactsSection } from './EmergencyContactsSection';
 
 interface Props {
   patient: PatientUser;
   onUpdatePatient: (updated: PatientUser) => void;
   onOpenECGModal: (doc: CardiacDocument) => void;
+  onNavigateToTelemetry?: () => void;
+  recentConsultation?: ConsultationInquiry;
+  onTriggerPushAlert?: (title: string, message: string) => void;
 }
 
 export const CardiacHealthProfile: React.FC<Props> = ({
   patient,
   onUpdatePatient,
   onOpenECGModal,
+  onNavigateToTelemetry,
+  recentConsultation,
+  onTriggerPushAlert,
 }) => {
+  const [profileActiveTab, setProfileActiveTab] = useState<'records' | 'medication_schedule' | 'chronic_meds' | 'emergency'>('medication_schedule');
   const [bloodPressure, setBloodPressure] = useState(patient.bloodPressure || '۱۳۵ / ۸۵ mmHg');
   const [medications, setMedications] = useState<string[]>(patient.currentMedications);
   const [newMedInput, setNewMedInput] = useState('');
@@ -25,6 +35,8 @@ export const CardiacHealthProfile: React.FC<Props> = ({
   const [newHistoryInput, setNewHistoryInput] = useState('');
 
   const [savedDocs, setSavedDocs] = useState<CardiacDocument[]>(SAMPLE_DOCUMENTS);
+
+  const primaryEmergencyContact = patient.emergencyContacts?.find(c => c.isPrimary) || patient.emergencyContacts?.[0];
 
   const handleAddMed = () => {
     if (!newMedInput.trim()) return;
@@ -55,19 +67,136 @@ export const CardiacHealthProfile: React.FC<Props> = ({
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
+    <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
       
       {/* Header */}
-      <div>
-        <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
-          پرونده الکترونیک سلامت قلب و مدارک من (ص ۵ پتنت)
-        </h1>
-        <p className="text-xs text-slate-500 mt-1">
-          مدیریت سوابق بیماری‌های قلبی، داروهای مصرفی و آرشیو تست‌های پاراکلینیکی
-        </p>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
+            پرونده الکترونیک سلامت قلب و داروهای من (ص ۵ پتنت)
+          </h1>
+          <p className="text-xs text-slate-500 mt-1">
+            مدیریت سوابق بیماری‌های قلبی، برنامه زمان‌بندی هفتگی داروها، مخاطبین اضطراری و تست‌های پاراکلینیکی
+          </p>
+        </div>
+
+        {/* Profile Tabs */}
+        <div className="flex flex-wrap items-center gap-1.5 bg-slate-100 p-1.5 rounded-2xl border border-slate-200 text-xs font-bold w-full sm:w-auto">
+          <button
+            onClick={() => setProfileActiveTab('medication_schedule')}
+            className={`flex-1 sm:flex-initial px-3.5 py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
+              profileActiveTab === 'medication_schedule'
+                ? 'bg-rose-600 text-white shadow-md'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Pill className="w-3.5 h-3.5" />
+            <span>برنامه هفتگی داروها</span>
+          </button>
+
+          <button
+            onClick={() => setProfileActiveTab('chronic_meds')}
+            className={`flex-1 sm:flex-initial px-3.5 py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
+              profileActiveTab === 'chronic_meds'
+                ? 'bg-indigo-600 text-white shadow-md'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <ShieldAlert className="w-3.5 h-3.5" />
+            <span>سوابق دارویی مزمن (DDI)</span>
+          </button>
+
+          <button
+            onClick={() => setProfileActiveTab('emergency')}
+            className={`flex-1 sm:flex-initial px-3.5 py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
+              profileActiveTab === 'emergency'
+                ? 'bg-red-600 text-white shadow-md'
+                : 'text-red-700 bg-red-50/80 hover:bg-red-100 border border-red-200/80'
+            }`}
+          >
+            <PhoneCall className="w-3.5 h-3.5 text-red-600" />
+            <span>مخاطبین اضطراری و ۱۱۵</span>
+            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+          </button>
+          
+          <button
+            onClick={() => setProfileActiveTab('records')}
+            className={`flex-1 sm:flex-initial px-3.5 py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
+              profileActiveTab === 'records'
+                ? 'bg-rose-600 text-white shadow-md'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <FileText className="w-3.5 h-3.5" />
+            <span>سوابق و مدارک پزشکی</span>
+          </button>
+        </div>
       </div>
 
-      {/* Patient Vitals Card */}
+      {/* Persistent Emergency Quick Bar across all tabs */}
+      {profileActiveTab !== 'emergency' && (
+        <div className="bg-gradient-to-r from-red-50 via-rose-50 to-amber-50 rounded-2xl border border-red-200/90 p-3 sm:p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-red-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+              <Siren className="w-4 h-4 animate-pulse" />
+            </div>
+            <div className="text-right">
+              <span className="font-bold text-xs text-red-900 block">
+                دسترسی سریع فوریت‌های قلبی (Urgent Cardiac Action):
+              </span>
+              <span className="text-[11px] text-red-700">
+                درد شدید قفسه سینه یا تنگی نفس حاد؟ فوراً با ۱۱۵ تماس بگیرید یا مخاطبان اضطراری خود را مطلع کنید.
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
+            <button
+              type="button"
+              onClick={() => setProfileActiveTab('emergency')}
+              className="px-3 py-1.5 bg-white text-red-700 hover:bg-red-50 border border-red-200 rounded-xl font-bold text-xs transition-colors"
+            >
+              مدیریت مخاطبین اضطراری
+            </button>
+            <a
+              href="tel:115"
+              className="px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-black text-xs flex items-center gap-1.5 shadow-sm transition-transform active:scale-95"
+            >
+              <PhoneCall className="w-3.5 h-3.5" />
+              <span>تماس فوری ۱۱۵</span>
+            </a>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 1: MEDICATION SCHEDULE */}
+      {profileActiveTab === 'medication_schedule' && (
+        <MedicationScheduleView
+          patient={patient}
+          recentConsultation={recentConsultation}
+          onTriggerPushAlert={onTriggerPushAlert}
+        />
+      )}
+
+      {/* TAB 2: CHRONIC MEDS & DRUG INTERACTIONS (DDI ENGINE) */}
+      {profileActiveTab === 'chronic_meds' && (
+        <div className="space-y-4">
+          <DrugInteractionChecker />
+        </div>
+      )}
+
+      {/* TAB 3: EMERGENCY CONTACTS & CALL 115 */}
+      {profileActiveTab === 'emergency' && (
+        <EmergencyContactsSection
+          patient={patient}
+          onUpdatePatient={onUpdatePatient}
+          onTriggerPushAlert={onTriggerPushAlert}
+        />
+      )}
+
+      {/* TAB 2: OVERVIEW & PARACLINICAL RECORDS */}
+      {profileActiveTab === 'records' && (
+        <div className="space-y-6">
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="bg-slate-900 text-white p-5 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -122,6 +251,35 @@ export const CardiacHealthProfile: React.FC<Props> = ({
             </div>
           </div>
         </div>
+
+        {/* Visual Recharts Dashboard Prompt */}
+        {onNavigateToTelemetry && (
+          <div className="px-6 pb-6">
+            <div className="p-4 bg-gradient-to-r from-rose-50 via-red-50 to-amber-50 rounded-2xl border border-rose-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-rose-600 text-white rounded-xl">
+                  <Activity className="w-5 h-5 animate-pulse" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-xs sm:text-sm text-slate-900">
+                    مشاهده داشبورد بصری روند فشار خون و ضربان قلب (Recharts)
+                  </h4>
+                  <p className="text-[11px] text-slate-600">
+                    نمایش تغییرات ۱۰ نوبت سنجش اخیر با نمودارهای تعاملی ComposedChart
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={onNavigateToTelemetry}
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-sm transition-all shrink-0"
+              >
+                <span>باز کردن نمودارهای بصری</span>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -213,8 +371,50 @@ export const CardiacHealthProfile: React.FC<Props> = ({
             </button>
           </div>
         </div>
-
       </div>
+
+      {/* Emergency Contacts Quick Snapshot in Records Tab */}
+        <div className="bg-gradient-to-r from-red-50 to-rose-50 p-4 sm:p-5 rounded-2xl shadow-xs border border-red-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-red-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+              <PhoneCall className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h4 className="font-bold text-xs sm:text-sm text-red-950">
+                  مخاطب اصلی اضطراری: {primaryEmergencyContact ? `${primaryEmergencyContact.name} (${primaryEmergencyContact.relationship})` : 'ثبت نشده'}
+                </h4>
+                {primaryEmergencyContact && (
+                  <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-red-200/80 text-red-900 font-mono">
+                    {primaryEmergencyContact.phoneNumber}
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-red-700 mt-0.5">
+                دسترسی سریع به شماره‌های امدادی ۱۱۵ و مخاطبین محلی در زمان بروز علائم حاد قلبی
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
+            {primaryEmergencyContact && (
+              <a
+                href={`tel:${primaryEmergencyContact.phoneNumber}`}
+                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs flex items-center gap-1 shadow-xs transition-colors"
+              >
+                <Phone className="w-3.5 h-3.5" />
+                <span>تماس با {primaryEmergencyContact.relationship}</span>
+              </a>
+            )}
+            <button
+              type="button"
+              onClick={() => setProfileActiveTab('emergency')}
+              className="px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs flex items-center gap-1 shadow-xs transition-colors"
+            >
+              <span>مشاهده و ویرایش مخاطبین</span>
+            </button>
+          </div>
+        </div>
 
       {/* Saved Cardiac Documents Repository */}
       <div className="bg-white p-6 rounded-2xl shadow-xs border border-slate-200 space-y-4">
@@ -252,6 +452,8 @@ export const CardiacHealthProfile: React.FC<Props> = ({
           ))}
         </div>
       </div>
+        </div>
+      )}
 
     </div>
   );

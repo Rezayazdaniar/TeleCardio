@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { 
   Heart, User, Calendar, FileText, CheckCircle2, AlertCircle, 
-  Upload, Send, Printer, ArrowRight, Activity, Download, Plus, HelpCircle, ExternalLink
+  Upload, Send, Printer, ArrowRight, Activity, Download, Plus, HelpCircle, ExternalLink,
+  ShieldCheck, Pill
 } from 'lucide-react';
 import { ConsultationInquiry, CardiacDocument, PatientUser } from '../types';
+import { MedicalReportPDFModal } from './MedicalReportPDFModal';
 
 interface Props {
   consultation: ConsultationInquiry;
@@ -22,6 +24,7 @@ export const PatientConsultationResult: React.FC<Props> = ({
   onSubmitSupplementalDocs,
   onNavigateToSpecialistClinic,
 }) => {
+  const [showPDFModal, setShowPDFModal] = useState(false);
   const [supplementalNotes, setSupplementalNotes] = useState('');
   const [uploadedSupplementalDocs, setUploadedSupplementalDocs] = useState<CardiacDocument[]>([]);
   const [supplementalSent, setSupplementalSent] = useState(false);
@@ -54,14 +57,14 @@ export const PatientConsultationResult: React.FC<Props> = ({
   };
 
   const handlePrintSummary = () => {
-    window.print();
+    setShowPDFModal(true);
   };
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       
       {/* Top Breadcrumb & Navigation */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
         <button
           onClick={onBack}
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-white px-3 py-1.5 rounded-lg border border-slate-200 transition-colors shadow-2xs"
@@ -70,13 +73,15 @@ export const PatientConsultationResult: React.FC<Props> = ({
           <span>بازگشت به سوابق و پرونده‌ها</span>
         </button>
 
-        <button
-          onClick={handlePrintSummary}
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 hover:text-rose-600 bg-white px-3 py-1.5 rounded-lg border border-slate-200 transition-colors shadow-2xs"
-        >
-          <Printer className="w-3.5 h-3.5" />
-          <span>چاپ برگه خلاصه مشاوره پزشکی</span>
-        </button>
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+          <button
+            onClick={() => setShowPDFModal(true)}
+            className="inline-flex items-center gap-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 px-3.5 py-2 rounded-xl transition-all shadow-md cursor-pointer"
+          >
+            <Download className="w-4 h-4" />
+            <span>دانلود پرونده استاندارد PDF با لوگوی مرکز سلامت</span>
+          </button>
+        </div>
       </div>
 
       {/* Main Result Sheet - Direct Reflection of Patent Page 7 & Page 3 */}
@@ -177,6 +182,17 @@ export const PatientConsultationResult: React.FC<Props> = ({
                         <span>{item}</span>
                       </div>
                     ))}
+                  </div>
+
+                  {/* Chronic Medication Safety Verification Badge */}
+                  <div className="mt-3 p-3 bg-indigo-50/80 rounded-xl border border-indigo-200 text-xs flex items-start gap-2.5">
+                    <ShieldCheck className="w-4 h-4 text-indigo-700 shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-bold text-indigo-950 block">پایش سوابق دارویی و ایمنی تداخلات:</span>
+                      <p className="text-slate-700 text-[11px] mt-0.5 leading-relaxed">
+                        سوابق دارویی مزمن بیمار (شامل لوزارتان، آسپرین، متفورمین و ناپروکسن) پیش از صدور این نسخه، در سامانه غربالگری تداخلات (DDI) توسط متخصص قلب بررسی شده و توصیه‌های ایمن اعمال گردید.
+                      </p>
+                    </div>
                   </div>
                 </div>
               )}
@@ -334,6 +350,15 @@ export const PatientConsultationResult: React.FC<Props> = ({
 
         </div>
       </div>
+
+      {/* Official Medical Report PDF Export Modal */}
+      <MedicalReportPDFModal
+        isOpen={showPDFModal}
+        onClose={() => setShowPDFModal(false)}
+        consultation={consultation}
+        patient={patient}
+      />
+
     </div>
   );
 };

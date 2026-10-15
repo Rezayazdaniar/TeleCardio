@@ -39,6 +39,16 @@ export interface Doctor {
   isTriageDoctor?: boolean;
 }
 
+export interface EmergencyContact {
+  id: string;
+  name: string;
+  relationship: string; // e.g. همسر، فرزند، پزشک معالج، همسایه، درمانگاه محلی
+  phoneNumber: string;
+  isPrimary?: boolean;
+  notes?: string;
+  address?: string;
+}
+
 export interface PatientUser {
   id: string;
   firstName: string;
@@ -53,6 +63,7 @@ export interface PatientUser {
   medicalHistory: string[];
   currentMedications: string[];
   allergies?: string[];
+  emergencyContacts?: EmergencyContact[];
 }
 
 export interface ConsultationInquiry {
@@ -115,4 +126,24 @@ export interface ConsultationInquiry {
   };
 
   status: ConsultationStatus;
+}
+
+export type NotificationType = 
+  | 'specialist_reply'          // پاسخ جدید از پزشک متخصص
+  | 'additional_info_requested' // درخواست مدارک یا اطلاعات تکمیلی (ص ۶ و ۷ پتنت)
+  | 'prescription_added'        // ثبت دستور دارویی یا مراقبتی جدید
+  | 'triage_approved'           // تایید تریاژ و ارجاع به متخصص
+  | 'vitals_alert';             // هشدار در روند علائم حیاتی
+
+export interface InAppNotification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  timestamp: string;
+  read: boolean;
+  consultationId?: string;
+  doctorName?: string;
+  actionTab?: 'page_one' | 'inquiry_form' | 'telemetry' | 'history' | 'result' | 'profile';
+  highlightBadge?: string;
 }

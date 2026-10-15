@@ -3,8 +3,9 @@ import {
   Heart, Menu, X, User, Shield, Stethoscope, Sparkles, 
   FileText, Activity, LogOut, LogIn, ChevronDown, BookOpen
 } from 'lucide-react';
-import { Doctor, PatientUser } from '../types';
+import { Doctor, PatientUser, InAppNotification } from '../types';
 import { DOCTORS } from '../data/mockData';
+import { NotificationBell } from './NotificationBell';
 
 export type ActiveRole = 'patient' | 'triage_doctor' | 'specialist_doctor';
 
@@ -15,8 +16,13 @@ interface Props {
   currentDoctor: Doctor;
   onOpenAuthModal: () => void;
   onOpenPatentModal: () => void;
-  onNavigateTab: (tab: 'page_one' | 'inquiry_form' | 'history' | 'profile' | 'disclaimer') => void;
+  onNavigateTab: (tab: 'page_one' | 'inquiry_form' | 'history' | 'profile' | 'telemetry' | 'disclaimer') => void;
   currentTab: string;
+  notifications: InAppNotification[];
+  onMarkAsRead: (id: string) => void;
+  onMarkAllAsRead: () => void;
+  onSelectNotification: (notif: InAppNotification) => void;
+  onTriggerSimulatedNotif?: () => void;
 }
 
 export const Navbar: React.FC<Props> = ({
@@ -28,6 +34,11 @@ export const Navbar: React.FC<Props> = ({
   onOpenPatentModal,
   onNavigateTab,
   currentTab,
+  notifications,
+  onMarkAsRead,
+  onMarkAllAsRead,
+  onSelectNotification,
+  onTriggerSimulatedNotif,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
@@ -87,6 +98,17 @@ export const Navbar: React.FC<Props> = ({
                 ثبت مشاوره قلبی (ص ۲ و ۵)
               </button>
               <button
+                onClick={() => onNavigateTab('telemetry')}
+                className={`px-3 py-2 rounded-xl transition-colors flex items-center gap-1.5 ${
+                  currentTab === 'telemetry'
+                    ? 'bg-rose-50 text-rose-700 font-extrabold'
+                    : 'hover:bg-slate-100 text-slate-600'
+                }`}
+              >
+                <Activity className="w-3.5 h-3.5 text-rose-600" />
+                <span>داشبورد روند علائم (Recharts)</span>
+              </button>
+              <button
                 onClick={() => onNavigateTab('history')}
                 className={`px-3 py-2 rounded-xl transition-colors ${
                   currentTab === 'history' || currentTab === 'result'
@@ -122,6 +144,15 @@ export const Navbar: React.FC<Props> = ({
               <span className="hidden sm:inline">ایده و تطبیق با پتنت اولیه</span>
               <span className="sm:hidden">پتنت</span>
             </button>
+
+            {/* Notification Bell with Badge */}
+            <NotificationBell
+              notifications={notifications}
+              onMarkAsRead={onMarkAsRead}
+              onMarkAllAsRead={onMarkAllAsRead}
+              onSelectNotification={onSelectNotification}
+              onTriggerSimulatedNotif={onTriggerSimulatedNotif}
+            />
 
             {/* Interactive Role Switcher Dropdown */}
             <div className="relative">
@@ -255,6 +286,17 @@ export const Navbar: React.FC<Props> = ({
             >
               <FileText className="w-4 h-4 text-rose-600" />
               <span>سوابق مشاوره (Consultation History)</span>
+            </button>
+
+            <button
+              onClick={() => {
+                onNavigateTab('telemetry');
+                setMobileMenuOpen(false);
+              }}
+              className="p-3 rounded-xl bg-slate-50 hover:bg-rose-50 hover:text-rose-700 text-slate-800 text-right font-semibold flex items-center gap-2.5 transition-colors border border-slate-200/80"
+            >
+              <Activity className="w-4 h-4 text-rose-600" />
+              <span>داشبورد روند علائم حیاتی (Recharts)</span>
             </button>
 
             <button

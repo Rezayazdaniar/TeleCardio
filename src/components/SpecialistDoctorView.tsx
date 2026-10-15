@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { 
   Heart, User, Calendar, Clock, FileText, Activity, CheckSquare, 
-  Square, Send, Eye, AlertCircle, Plus, Trash2, CheckCircle2, Shield
+  Square, Send, Eye, AlertCircle, Plus, Trash2, CheckCircle2, Shield, Pill, AlertTriangle
 } from 'lucide-react';
 import { ConsultationInquiry, Doctor, CardiacDocument } from '../types';
+import { DrugInteractionChecker } from './DrugInteractionChecker';
 
 interface Props {
   consultations: ConsultationInquiry[];
@@ -342,24 +343,69 @@ export const SpecialistDoctorView: React.FC<Props> = ({
                     />
                   </div>
 
+                  {/* بررسی سوابق دارویی مزمن و هشدارهای تداخل دارویی (DDI) قبل از تجویز */}
+                  <div className="pt-2">
+                    <DrugInteractionChecker
+                      candidateDrug={newPrescriptionInput}
+                      onApplyRecommendation={(rec) => {
+                        setPrescriptions((prev) => [...prev, `توصیه ایمن پزشک: ${rec}`]);
+                      }}
+                    />
+                  </div>
+
                   {/* Prescription recommendations */}
-                  <div>
-                    <label className="block text-xs font-bold text-slate-800 mb-1.5">
-                      دستورات دارویی و توصیه‌های تکمیلی:
+                  <div className="pt-2">
+                    <label className="block text-xs font-bold text-slate-800 mb-1.5 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <Pill className="w-3.5 h-3.5 text-rose-600" />
+                        <span>دستورات دارویی نهایی و توصیه‌های تکمیلی نسخه:</span>
+                      </span>
+                      <span className="text-[11px] text-slate-500 font-normal">
+                        ({prescriptions.length} مورد ثبت‌شده)
+                      </span>
                     </label>
                     <div className="space-y-1.5 mb-2">
-                      {prescriptions.map((rx, idx) => (
-                        <div key={idx} className="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-200 text-xs">
-                          <span className="text-slate-800">• {rx}</span>
-                          <button
-                            type="button"
-                            onClick={() => handleRemovePrescription(idx)}
-                            className="text-slate-400 hover:text-red-500"
+                      {prescriptions.map((rx, idx) => {
+                        const hasInteractionRisk = 
+                          (rx.includes('وراپامیل') && rx.includes('پروپرانولول')) ||
+                          rx.includes('وراپامیل') ||
+                          rx.includes('اسپیرونولاکتون') ||
+                          rx.includes('ناپروکسن') ||
+                          rx.includes('کلاریترومایسین');
+
+                        return (
+                          <div 
+                            key={idx} 
+                            className={`flex items-center justify-between p-2.5 rounded-xl border text-xs transition-all ${
+                              hasInteractionRisk 
+                                ? 'bg-amber-50/90 border-amber-300 ring-1 ring-amber-200' 
+                                : 'bg-slate-50 border-slate-200'
+                            }`}
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      ))}
+                            <div className="flex items-center gap-2">
+                              {hasInteractionRisk ? (
+                                <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                              ) : (
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 shrink-0" />
+                              )}
+                              <span className="text-slate-800 font-medium">{rx}</span>
+                              {hasInteractionRisk && (
+                                <span className="text-[10px] bg-amber-200 text-amber-900 px-1.5 py-0.5 rounded font-bold font-mono">
+                                  نیازمند توجه به تداخل
+                                </span>
+                              )}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleRemovePrescription(idx)}
+                              className="text-slate-400 hover:text-red-500 p-1"
+                              title="حذف از نسخه"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        );
+                      })}
                     </div>
 
                     <div className="flex gap-2">
@@ -368,15 +414,15 @@ export const SpecialistDoctorView: React.FC<Props> = ({
                         value={newPrescriptionInput}
                         onChange={(e) => setNewPrescriptionInput(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddPrescription())}
-                        placeholder="افزودن دستور دارویی جدید..."
-                        className="flex-1 px-3 py-1.5 rounded-lg border border-slate-300 text-xs outline-none"
+                        placeholder="افزودن دستور دارویی جدید به نسخه (بررسی خودکار تداخلات در پنل بالا)..."
+                        className="flex-1 px-3 py-2 rounded-xl border border-slate-300 text-xs outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500"
                       />
                       <button
                         type="button"
                         onClick={handleAddPrescription}
-                        className="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-semibold"
+                        className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-semibold cursor-pointer shrink-0"
                       >
-                        افزودن
+                        افزودن به نسخه
                       </button>
                     </div>
                   </div>

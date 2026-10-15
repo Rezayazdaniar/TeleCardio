@@ -62,6 +62,35 @@ export const CURRENT_PATIENT: PatientUser = {
   medicalHistory: ['سابقه فشار خون خفیف (تحت درمان)', 'سابقه فامیلی CAD پدری در ۶۰ سالگی'],
   currentMedications: ['قرص لوزارتان ۲۵ میلی‌گرم روزانه', 'آسپرین ۸۰ میلی‌گرم'],
   allergies: ['پنی‌سیلین'],
+  emergencyContacts: [
+    {
+      id: 'ec-1',
+      name: 'مریم رسولی',
+      relationship: 'همسر',
+      phoneNumber: '۰۹۱۲۹۸۷۶۵۴۳',
+      isPrimary: true,
+      notes: 'همیشه همراه، مطلع از تمام داروهای قلبی و دارای کلید منزل',
+      address: 'تهران، خیابان شریعتی، بالاتر از پل رومی',
+    },
+    {
+      id: 'ec-2',
+      name: 'مهندس سعید رضایی',
+      relationship: 'فرزند (پسر ارشد)',
+      phoneNumber: '۰۹۳۵۱۱۱۲۲۳۳',
+      isPrimary: false,
+      notes: 'محل کار نزدیک منزل (فاصله ۵ دقیقه)',
+      address: 'تهران، خیابان دولت',
+    },
+    {
+      id: 'ec-3',
+      name: 'دکتر علیرضا افشار',
+      relationship: 'پزشک معالج قلب',
+      phoneNumber: '۰۲۱۲۲۰۰۳۳۴۴',
+      isPrimary: false,
+      notes: 'مطب روزهای زوج از ساعت ۱۶ الی ۲۰',
+      address: 'بیمارستان قلب شهید رجایی - کلینیک آریتمی',
+    },
+  ],
 };
 
 export const SAMPLE_DOCUMENTS: CardiacDocument[] = [
@@ -224,5 +253,42 @@ export const INITIAL_CONSULTATIONS: ConsultationInquiry[] = [
     },
     documents: [SAMPLE_DOCUMENTS[0]],
     status: 'triage_pending', // Waiting in Triage Inbox for Dr. Kazemi (Patent Page 3)
+  },
+];
+
+export const INITIAL_NOTIFICATIONS: import('../types').InAppNotification[] = [
+  {
+    id: 'notif-1',
+    type: 'additional_info_requested',
+    title: 'درخواست مدارک تکمیلی از سوی دکتر سهرابی',
+    message: 'دکتر کامران سهرابی برای بررسی تپش قلب شما، درخواست هولتر ریتم ۲۴ ساعته و آزمایش جدید الکترولیت‌ها نموده است.',
+    timestamp: '۱۰ دقیقه پیش',
+    read: false,
+    consultationId: 'REQ-1403-102',
+    doctorName: 'دکتر کامران سهرابی',
+    actionTab: 'result',
+    highlightBadge: 'ص ۷ پتنت',
+  },
+  {
+    id: 'notif-2',
+    type: 'prescription_added',
+    title: 'دستورالعمل دارویی جدید ثبت شد',
+    message: 'تجویز قرص پروپرانولول ۱۰ میلی‌گرم و توصیه‌های پرهیز از کافئین در پرونده REQ-1403-102 درج گردید.',
+    timestamp: '۲ ساعت پیش',
+    read: false,
+    consultationId: 'REQ-1403-102',
+    doctorName: 'دکتر کامران سهرابی',
+    actionTab: 'result',
+  },
+  {
+    id: 'notif-3',
+    type: 'triage_approved',
+    title: 'غربالگری تریاژ سلامت تکمیل شد',
+    message: 'پرونده شما توسط دکتر مریم کاظمی (تریاژ مرکز بهداشت) تایید و با اولویت بالا به کاردیولوژیست ارجاع یافت.',
+    timestamp: 'دیروز',
+    read: true,
+    consultationId: 'REQ-1403-102',
+    doctorName: 'دکتر مریم کاظمی',
+    actionTab: 'history',
   },
 ];

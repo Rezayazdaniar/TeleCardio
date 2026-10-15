@@ -12,10 +12,12 @@ import { AuthModal } from './components/AuthModal';
 import { ECGViewerModal } from './components/ECGViewerModal';
 import { PatentComparisonModal } from './components/PatentComparisonModal';
 
-import { Doctor, PatientUser, ConsultationInquiry, CardiacDocument } from './types';
-import { CURRENT_PATIENT, DOCTORS, INITIAL_CONSULTATIONS } from './data/mockData';
+import { Doctor, PatientUser, ConsultationInquiry, CardiacDocument, InAppNotification } from './types';
+import { CURRENT_PATIENT, DOCTORS, INITIAL_CONSULTATIONS, INITIAL_NOTIFICATIONS } from './data/mockData';
 import { Sparkles, HeartPulse, ShieldAlert, ArrowLeft, HelpCircle } from 'lucide-react';
 import { PatentPageOne } from './components/PatentPageOne';
+import { CardiacTelemetryDashboard } from './components/CardiacTelemetryDashboard';
+import { NotificationToast } from './components/NotificationToast';
 
 export default function App() {
   // Application Roles: Patient, Level 1 Triage Doctor, Level 2 Specialist Cardiologist
@@ -30,8 +32,12 @@ export default function App() {
   const [consultations, setConsultations] = useState<ConsultationInquiry[]>(INITIAL_CONSULTATIONS);
   const [selectedConsultationId, setSelectedConsultationId] = useState<string>('REQ-1403-102'); // Pre-selected consultation with requested docs
 
-  // Active Tab for Patient View: 'page_one' (ص ۱ پتنت - ورودی پیش‌فرض) | 'disclaimer' | 'inquiry_form' (ص ۲ و ۵) | 'history' | 'result' (ص ۳ و ۷) | 'profile'
-  const [currentTab, setCurrentTab] = useState<'page_one' | 'disclaimer' | 'inquiry_form' | 'history' | 'result' | 'profile'>('page_one');
+  // In-App Notifications State
+  const [notifications, setNotifications] = useState<InAppNotification[]>(INITIAL_NOTIFICATIONS);
+  const [activeToast, setActiveToast] = useState<InAppNotification | null>(INITIAL_NOTIFICATIONS[0]);
+
+  // Active Tab for Patient View: 'page_one' (ص ۱ پتنت - ورودی پیش‌فرض) | 'disclaimer' | 'inquiry_form' (ص ۲ و ۵) | 'telemetry' | 'history' | 'result' (ص ۳ و ۷) | 'profile'
+  const [currentTab, setCurrentTab] = useState<'page_one' | 'disclaimer' | 'inquiry_form' | 'telemetry' | 'history' | 'result' | 'profile'>('page_one');
 
   // Modals
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -66,6 +72,81 @@ export default function App() {
   const handleUpdateConsultation = (updated: ConsultationInquiry) => {
     setConsultations((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
     setSelectedConsultationId(updated.id);
+
+    // If specialist submitted or updated review, generate in-app notification & toast for patient
+    if (updated.specialistReview) {
+      const isReqDocs = updated.specialistReview.requestedAdditionalInfo;
+      const notif: InAppNotification = {
+        id: `notif-${Date.now()}`,
+        type: isReqDocs ? 'additional_info_requested' : 'prescription_added',
+        title: isReqDocs 
+          ? `درخواست مدارک تکمیلی از سوی ${updated.specialistReview.doctorName}`
+          : `پاسخ و دستورالعمل درمانی جدید از ${updated.specialistReview.doctorName}`,
+        message: isReqDocs
+          ? (updated.specialistReview.additionalInfoDescription || 'پزشک برای تشخیص دقیق‌تر، درخواست نوار قلب یا آزمایش جدید داده است.')
+          : `تشخیص: ${updated.specialistReview.diagnosis} — توصیه‌ها و نسخه در پرونده ثبت شد.`,
+        timestamp: 'هم‌اکنون',
+        read: false,
+        consultationId: updated.id,
+        doctorName: updated.specialistReview.doctorName,
+        actionTab: 'result',
+        highlightBadge: isReqDocs ? 'ص ۷ پتنت' : 'دستور پزشک',
+      };
+      setNotifications((prev) => [notif, ...prev]);
+      setActiveToast(notif);
+    } else if (updated.triage?.passedToSpecialist) {
+      const notif: InAppNotification = {
+        id: `notif-${Date.now()}`,
+        type: 'triage_approved',
+        title: `پرونده شما به کاردیولوژیست ارجاع شد`,
+        message: `پزشک تریاژ (${updated.triage.doctorName}) پرونده را بررسی و به متخصص قلب ارجاع داد.`,
+        timestamp: 'هم‌اکنون',
+        read: false,
+        consultationId: updated.id,
+        doctorName: updated.triage.doctorName,
+        actionTab: 'history',
+      };
+      setNotifications((prev) => [notif, ...prev]);
+      setActiveToast(notif);
+    }
+  };
+
+  // Notification management handlers
+  const handleMarkAsRead = (id: string) => {
+    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
+  };
+
+  const handleMarkAllAsRead = () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  };
+
+  const handleSelectNotification = (notif: InAppNotification) => {
+    handleMarkAsRead(notif.id);
+    if (notif.consultationId) {
+      setSelectedConsultationId(notif.consultationId);
+    }
+    if (notif.actionTab) {
+      setCurrentTab(notif.actionTab);
+    }
+    setActiveRole('patient');
+    setActiveToast(null);
+  };
+
+  const handleTriggerSimulatedNotif = () => {
+    const newNotif: InAppNotification = {
+      id: `notif-${Date.now()}`,
+      type: 'prescription_added',
+      title: 'دستورالعمل بالینی جدید از دکتر سهرابی',
+      message: 'نسخه دارویی جدید شامل قرص متوپرولول ۲۵ میلی‌گرم و پایش منظم فشار خون در پرونده شما ثبت گردید.',
+      timestamp: 'هم‌اکنون',
+      read: false,
+      consultationId: 'REQ-1403-102',
+      doctorName: 'دکتر کامران سهرابی',
+      actionTab: 'result',
+      highlightBadge: 'دستور جدید',
+    };
+    setNotifications((prev) => [newNotif, ...prev]);
+    setActiveToast(newNotif);
   };
 
   // Handler: Patient Submits Supplemental Info (Patent Page 7)
@@ -104,7 +185,12 @@ export default function App() {
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-800 font-['Vazirmatn',system-ui,sans-serif]">
       
       {/* Top Cardiac Emergency Red-Flag Warning Banner */}
-      <CardiacEmergencyBanner />
+      <CardiacEmergencyBanner
+        onOpenEmergencyContacts={() => {
+          setActiveRole('patient');
+          setCurrentTab('profile');
+        }}
+      />
 
       {/* Main Navigation with Brand & Patent Tools */}
       <Navbar
@@ -116,6 +202,11 @@ export default function App() {
         onOpenPatentModal={() => setPatentModalOpen(true)}
         onNavigateTab={(tab) => setCurrentTab(tab)}
         currentTab={currentTab}
+        notifications={notifications}
+        onMarkAsRead={handleMarkAsRead}
+        onMarkAllAsRead={handleMarkAllAsRead}
+        onSelectNotification={handleSelectNotification}
+        onTriggerSimulatedNotif={handleTriggerSimulatedNotif}
       />
 
       {/* Quick Ideation & Patent Context Banner */}
@@ -168,6 +259,13 @@ export default function App() {
               />
             )}
 
+            {/* Visual Cardiac Telemetry Dashboard (Recharts module) */}
+            {currentTab === 'telemetry' && (
+              <CardiacTelemetryDashboard
+                patient={currentPatient}
+              />
+            )}
+
             {/* Step 3 & 7: Consultation Response & Supplemental Info Request (صفحه ۷ و ۳ پتنت) */}
             {currentTab === 'result' && activeConsultation && (
               <PatientConsultationResult
@@ -202,6 +300,22 @@ export default function App() {
                 patient={currentPatient}
                 onUpdatePatient={(p) => setCurrentPatient(p)}
                 onOpenECGModal={(doc) => setActiveECGDoc(doc)}
+                onNavigateToTelemetry={() => setCurrentTab('telemetry')}
+                recentConsultation={activeConsultation}
+                onTriggerPushAlert={(title, message) => {
+                  const notif: InAppNotification = {
+                    id: `notif-push-${Date.now()}`,
+                    type: 'prescription_added',
+                    title,
+                    message,
+                    timestamp: 'هم‌اکنون',
+                    read: false,
+                    actionTab: 'profile',
+                    highlightBadge: 'هشدار مصرف دارو',
+                  };
+                  setNotifications((prev) => [notif, ...prev]);
+                  setActiveToast(notif);
+                }}
               />
             )}
           </>
@@ -283,6 +397,13 @@ export default function App() {
           onClose={() => setActiveECGDoc(null)}
         />
       )}
+
+      {/* Floating In-App Notification Toast */}
+      <NotificationToast
+        notification={activeToast}
+        onDismiss={() => setActiveToast(null)}
+        onAction={handleSelectNotification}
+      />
 
     </div>
   );
