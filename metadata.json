@@ -1,0 +1,8 @@
+{
+  "name": "TeleCardio - کلینیک مجازی قلب",
+  "description": "سامانه مشاوره پزشکی از راه دور و تریاژ تخصصی بیماری‌های قلب و عروق بر اساس معماری پتنت کلینیک مجازی مرکز بهداشت",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
