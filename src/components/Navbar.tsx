@@ -16,7 +16,7 @@ interface Props {
   currentDoctor: Doctor;
   onOpenAuthModal: () => void;
   onOpenPatentModal: () => void;
-  onNavigateTab: (tab: 'page_one' | 'inquiry_form' | 'history' | 'profile' | 'telemetry' | 'disclaimer') => void;
+  onNavigateTab: (tab: 'landing' | 'ai_chat' | 'doctor_referrals' | 'page_one' | 'inquiry_form' | 'history' | 'profile' | 'telemetry' | 'disclaimer') => void;
   currentTab: string;
   notifications: InAppNotification[];
   onMarkAsRead: (id: string) => void;
@@ -49,25 +49,26 @@ export const Navbar: React.FC<Props> = ({
         <div className="flex items-center justify-between h-16 sm:h-18">
           
           {/* Right side: Logo & Brand (RTL: rightmost) */}
+          {/* Right side: Logo & Brand (RTL: rightmost) */}
           <div className="flex items-center gap-3">
             <button
-              onClick={() => onNavigateTab('page_one')}
+              onClick={() => onNavigateTab('landing')}
               className="flex items-center gap-2.5 text-right group"
             >
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-rose-600 to-red-500 text-white flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
-                <Heart className="w-5 h-5 fill-white text-rose-600 animate-pulse" />
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-600 to-teal-500 text-white flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+                <Heart className="w-5 h-5 fill-white text-sky-600" />
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
                   <span className="font-extrabold text-base sm:text-lg text-slate-900 tracking-tight">
-                    TeleCardio
+                    کلینیک فوق تخصصی قلب
                   </span>
-                  <span className="text-[10px] font-mono font-bold bg-rose-100 text-rose-800 px-1.5 py-0.5 rounded border border-rose-200">
-                    Tele D
+                  <span className="text-[10px] font-mono font-bold bg-sky-100 text-sky-800 px-1.5 py-0.5 rounded border border-sky-200">
+                    TeleCardio
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-500 truncate hidden sm:block">
-                  کلینیک مجازی قلب و عروق مرکز جامع سلامت
+                  سلامت قلب، کیفیت زندگی
                 </p>
               </div>
             </button>
@@ -77,36 +78,37 @@ export const Navbar: React.FC<Props> = ({
           {activeRole === 'patient' && (
             <nav className="hidden md:flex items-center gap-1 text-xs font-bold text-slate-700">
               <button
-                onClick={() => onNavigateTab('page_one')}
-                className={`px-3 py-2 rounded-xl transition-colors flex items-center gap-1 ${
-                  currentTab === 'page_one' || currentTab === 'disclaimer'
-                    ? 'bg-rose-50 text-rose-700 font-extrabold'
-                    : 'hover:bg-slate-100 text-slate-600'
-                }`}
-              >
-                <span className="w-4 h-4 rounded-full bg-rose-600 text-white text-[10px] flex items-center justify-center font-bold">۱</span>
-                <span>صفحه اول (ص ۱)</span>
-              </button>
-              <button
-                onClick={() => onNavigateTab('inquiry_form')}
-                className={`px-3 py-2 rounded-xl transition-colors ${
-                  currentTab === 'inquiry_form'
-                    ? 'bg-rose-50 text-rose-700 font-extrabold'
-                    : 'hover:bg-slate-100 text-slate-600'
-                }`}
-              >
-                ثبت مشاوره قلبی (ص ۲ و ۵)
-              </button>
-              <button
-                onClick={() => onNavigateTab('telemetry')}
+                onClick={() => onNavigateTab('landing')}
                 className={`px-3 py-2 rounded-xl transition-colors flex items-center gap-1.5 ${
-                  currentTab === 'telemetry'
-                    ? 'bg-rose-50 text-rose-700 font-extrabold'
+                  currentTab === 'landing'
+                    ? 'bg-sky-100 text-sky-800 font-extrabold'
                     : 'hover:bg-slate-100 text-slate-600'
                 }`}
               >
-                <Activity className="w-3.5 h-3.5 text-rose-600" />
-                <span>داشبورد روند علائم (Recharts)</span>
+                <Heart className="w-3.5 h-3.5 text-sky-600" />
+                <span>صفحه اصلی (عکس)</span>
+              </button>
+              <button
+                onClick={() => onNavigateTab('ai_chat')}
+                className={`px-3 py-2 rounded-xl transition-colors flex items-center gap-1.5 ${
+                  currentTab === 'ai_chat'
+                    ? 'bg-sky-100 text-sky-800 font-extrabold'
+                    : 'hover:bg-slate-100 text-slate-600'
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5 text-sky-600" />
+                <span>چت تریاژ هوشمند قلب</span>
+              </button>
+              <button
+                onClick={() => onNavigateTab('doctor_referrals')}
+                className={`px-3 py-2 rounded-xl transition-colors flex items-center gap-1.5 ${
+                  currentTab === 'doctor_referrals'
+                    ? 'bg-emerald-100 text-emerald-800 font-extrabold'
+                    : 'hover:bg-slate-100 text-slate-600'
+                }`}
+              >
+                <Stethoscope className="w-3.5 h-3.5 text-emerald-600" />
+                <span>کارتابل ارجاعات پزشک</span>
               </button>
               <button
                 onClick={() => onNavigateTab('history')}
@@ -116,7 +118,7 @@ export const Navbar: React.FC<Props> = ({
                     : 'hover:bg-slate-100 text-slate-600'
                 }`}
               >
-                سوابق و پاسخ پزشکان (ص ۷)
+                سوابق و پاسخ پزشکان
               </button>
               <button
                 onClick={() => onNavigateTab('profile')}
@@ -126,7 +128,7 @@ export const Navbar: React.FC<Props> = ({
                     : 'hover:bg-slate-100 text-slate-600'
                 }`}
               >
-                پرونده سلامت قلب من (ص ۵)
+                پرونده سلامت قلب
               </button>
             </nav>
           )}
@@ -257,13 +259,35 @@ export const Navbar: React.FC<Props> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
             <button
               onClick={() => {
-                onNavigateTab('profile');
+                onNavigateTab('landing');
                 setMobileMenuOpen(false);
               }}
-              className="p-3 rounded-xl bg-slate-50 hover:bg-rose-50 hover:text-rose-700 text-slate-800 text-right font-semibold flex items-center gap-2.5 transition-colors border border-slate-200/80"
+              className="p-3 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-900 text-right font-bold flex items-center gap-2.5 transition-colors border border-sky-200"
             >
-              <User className="w-4 h-4 text-rose-600" />
-              <span>پروفایل شخصی بیمار (Personal Profile)</span>
+              <Heart className="w-4 h-4 text-sky-600" />
+              <span>صفحه اصلی کلینیک (عکس اپ)</span>
+            </button>
+
+            <button
+              onClick={() => {
+                onNavigateTab('ai_chat');
+                setMobileMenuOpen(false);
+              }}
+              className="p-3 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-900 text-right font-bold flex items-center gap-2.5 transition-colors border border-sky-200"
+            >
+              <Sparkles className="w-4 h-4 text-sky-600" />
+              <span>چت تریاژ هوشمند قلب (ChatGPT Style)</span>
+            </button>
+
+            <button
+              onClick={() => {
+                onNavigateTab('doctor_referrals');
+                setMobileMenuOpen(false);
+              }}
+              className="p-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-900 text-right font-bold flex items-center gap-2.5 transition-colors border border-emerald-200"
+            >
+              <Stethoscope className="w-4 h-4 text-emerald-600" />
+              <span>کارتابل ارجاعات پزشک متخصص</span>
             </button>
 
             <button

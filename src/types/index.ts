@@ -144,6 +144,6 @@ export interface InAppNotification {
   read: boolean;
   consultationId?: string;
   doctorName?: string;
-  actionTab?: 'page_one' | 'inquiry_form' | 'telemetry' | 'history' | 'result' | 'profile';
+  actionTab?: 'page_one' | 'inquiry_form' | 'telemetry' | 'history' | 'result' | 'profile' | 'landing' | 'ai_chat' | 'doctor_referrals';
   highlightBadge?: string;
 }

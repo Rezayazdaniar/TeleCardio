@@ -12,12 +12,17 @@ import { AuthModal } from './components/AuthModal';
 import { ECGViewerModal } from './components/ECGViewerModal';
 import { PatentComparisonModal } from './components/PatentComparisonModal';
 
-import { Doctor, PatientUser, ConsultationInquiry, CardiacDocument, InAppNotification } from './types';
+import { Doctor, PatientUser, ConsultationInquiry, CardiacDocument, InAppNotification, TriageSeverity } from './types';
 import { CURRENT_PATIENT, DOCTORS, INITIAL_CONSULTATIONS, INITIAL_NOTIFICATIONS } from './data/mockData';
 import { Sparkles, HeartPulse, ShieldAlert, ArrowLeft, HelpCircle } from 'lucide-react';
 import { PatentPageOne } from './components/PatentPageOne';
 import { CardiacTelemetryDashboard } from './components/CardiacTelemetryDashboard';
 import { NotificationToast } from './components/NotificationToast';
+import { ClinicLandingHero } from './components/ClinicLandingHero';
+import { CardiacTriageChat } from './components/CardiacTriageChat';
+import { DoctorReferralsPanel } from './components/DoctorReferralsPanel';
+import { INITIAL_CHAT_SESSIONS } from './data/mockChats';
+import { ChatSession, ChatMessage } from './types/chat';
 
 export default function App() {
   // Application Roles: Patient, Level 1 Triage Doctor, Level 2 Specialist Cardiologist
@@ -36,8 +41,14 @@ export default function App() {
   const [notifications, setNotifications] = useState<InAppNotification[]>(INITIAL_NOTIFICATIONS);
   const [activeToast, setActiveToast] = useState<InAppNotification | null>(INITIAL_NOTIFICATIONS[0]);
 
-  // Active Tab for Patient View: 'page_one' (ص ۱ پتنت - ورودی پیش‌فرض) | 'disclaimer' | 'inquiry_form' (ص ۲ و ۵) | 'telemetry' | 'history' | 'result' (ص ۳ و ۷) | 'profile'
-  const [currentTab, setCurrentTab] = useState<'page_one' | 'disclaimer' | 'inquiry_form' | 'telemetry' | 'history' | 'result' | 'profile'>('page_one');
+  // Active Tab for Patient View: 'landing' (صفحه اول مشابه عکس کاربر) | 'ai_chat' | 'doctor_referrals' | 'page_one' | 'disclaimer' | 'inquiry_form' | 'telemetry' | 'history' | 'result' | 'profile'
+  const [currentTab, setCurrentTab] = useState<
+    'landing' | 'ai_chat' | 'doctor_referrals' | 'page_one' | 'disclaimer' | 'inquiry_form' | 'telemetry' | 'history' | 'result' | 'profile'
+  >('landing');
+
+  // AI Chat Sessions State (ChatGPT / Claude / Gemini style history)
+  const [chatSessions, setChatSessions] = useState<ChatSession[]>(INITIAL_CHAT_SESSIONS);
+  const [activeChatSessionId, setActiveChatSessionId] = useState<string>('chat-sess-102');
 
   // Modals
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -171,6 +182,209 @@ export default function App() {
     );
   };
 
+  // Handler: Start or open AI chat
+  const handleStartTriageChat = () => {
+    setCurrentTab('ai_chat');
+  };
+
+  // Handler: New chat session (ChatGPT style)
+  const handleNewChatSession = () => {
+    const newSessionId = `chat-sess-${Date.now()}`;
+    const nowStr = new Date().toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' });
+    const newSession: ChatSession = {
+      id: newSessionId,
+      title: 'گفتگوی جدید تریاژ قلبی',
+      createdAt: `۱۴۰۳/۰۷/۲۵ - ${nowStr}`,
+      updatedAt: 'هم‌اکنون',
+      patientId: currentPatient.id,
+      patientName: `${currentPatient.firstName} ${currentPatient.lastName}`,
+      status: 'chatting',
+      messages: [
+        {
+          id: `msg-${Date.now()}`,
+          sender: 'ai',
+          text: 'سلام دوست خوبم! من دستیار هوشمند کلینیک فوق تخصصی قلب هستم. با کمال میل و دلسوزی اینجام تا هوای قلبت رو داشته باشیم. نگران نباش و هر احساس، درد، تپش یا سنگینی که داری رو برام بنویس تا با هم بررسیش کنیم.',
+          timestamp: nowStr,
+          quickReplies: [
+            'احساس درد یا سنگینی قفسه سینه دارم',
+            'تپش قلب و احساس جا افتادن ضربان',
+            'تنگی نفس موقع بالا رفتن از پله‌ها',
+            'فقط می‌خوام چکاپ دوره‌ای کنم',
+          ],
+        },
+      ],
+    };
+
+    setChatSessions([newSession, ...chatSessions]);
+    setActiveChatSessionId(newSessionId);
+    setCurrentTab('ai_chat');
+  };
+
+  // Handler: Delete chat session
+  const handleDeleteChatSession = (id: string) => {
+    const remaining = chatSessions.filter((s) => s.id !== id);
+    setChatSessions(remaining);
+    if (activeChatSessionId === id && remaining.length > 0) {
+      setActiveChatSessionId(remaining[0].id);
+    }
+  };
+
+  // Handler: Update chat session
+  const handleUpdateChatSession = (updated: ChatSession) => {
+    setChatSessions((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
+  };
+
+  // Handler: When AI refers patient in chat to specialist doctor
+  const handleReferToDoctor = (
+    session: ChatSession,
+    matchedDoctor: Doctor,
+    clinicalSummary: string,
+    severity: TriageSeverity
+  ) => {
+    // Generate new consultation inquiry in doctor's referral list
+    const newInquiryId = `REQ-AI-${Math.floor(100 + Math.random() * 900)}`;
+    const nowStr = '۱۴۰۳/۰۷/۲۵ - ۱۲:۳۰';
+
+    const newInquiry: ConsultationInquiry = {
+      id: newInquiryId,
+      patientId: session.patientId,
+      patientName: session.patientName,
+      patientPhone: currentPatient.phoneNumber,
+      patientAge: currentPatient.age,
+      patientGender: currentPatient.gender,
+      targetDoctorId: matchedDoctor.id,
+      targetDoctorName: matchedDoctor.name,
+      createdAt: nowStr,
+      updatedAt: nowStr,
+      chiefComplaint: session.title,
+      symptomsDuration: 'مشخص شده در چت تریاژ هوشمند',
+      symptomsDescription: clinicalSummary,
+      documents: currentPatient.id === 'pat-101' && consultations[0]?.documents ? [consultations[0].documents[0]] : [],
+      status: 'referred_to_specialist',
+      triage: {
+        doctorId: DOCTORS[0].id,
+        doctorName: 'دستیار تریاژ هوشمند AI',
+        reviewedAt: nowStr,
+        severity,
+        triageNotes: clinicalSummary,
+        passedToSpecialist: true,
+        initialGuidance: `ارجاع به ${matchedDoctor.name} بر مبنای بیشترین اولویت و تطابق بالینی.`,
+      },
+    };
+
+    setConsultations((prev) => [newInquiry, ...prev]);
+
+    // Also update session with consultationId
+    const updatedWithConsultation: ChatSession = {
+      ...session,
+      consultationId: newInquiryId,
+      status: 'referred',
+      assignedDoctorId: matchedDoctor.id,
+      assignedDoctorName: matchedDoctor.name,
+    };
+    handleUpdateChatSession(updatedWithConsultation);
+
+    // Toast alert
+    const notif: InAppNotification = {
+      id: `notif-${Date.now()}`,
+      type: 'triage_approved',
+      title: `پرونده به ${matchedDoctor.name} ارجاع داده شد`,
+      message: `اطلاعات چت شما تحلیل شد و به متخصص دارای بیشترین اولویت درمانی فرستاده شد.`,
+      timestamp: 'هم‌اکنون',
+      read: false,
+      consultationId: newInquiryId,
+      doctorName: matchedDoctor.name,
+      actionTab: 'ai_chat',
+    };
+    setNotifications((prev) => [notif, ...prev]);
+    setActiveToast(notif);
+  };
+
+  // Handler: When Doctor submits response to patient's chat
+  const handleDoctorSendResponseToChat = (
+    sessionId: string,
+    consultationId: string | undefined,
+    diagnosis: string,
+    prescriptions: string[],
+    clinicalGuidance: string,
+    nextStep: string
+  ) => {
+    const nowTime = new Date().toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' });
+    const nowDate = '۱۴۰۳/۰۷/۲۵';
+
+    // 1. Append doctor response message to chat
+    setChatSessions((prev) =>
+      prev.map((sess) => {
+        if (sess.id === sessionId) {
+          const doctorMsg: ChatMessage = {
+            id: `msg-doc-${Date.now()}`,
+            sender: 'doctor',
+            text: `پاسخ و تحلیل بالینی از طرف ${currentDoctor.name} دریافت گردید.`,
+            timestamp: nowTime,
+            doctorResponse: {
+              doctorId: currentDoctor.id,
+              doctorName: currentDoctor.name,
+              specialty: currentDoctor.title,
+              submittedAt: `${nowDate} - ${nowTime}`,
+              diagnosis,
+              prescriptions,
+              clinicalGuidance,
+              nextStep,
+            },
+          };
+          return {
+            ...sess,
+            status: 'answered_by_doctor',
+            updatedAt: 'هم‌اکنون',
+            messages: [...sess.messages, doctorMsg],
+          };
+        }
+        return sess;
+      })
+    );
+
+    // 2. Update consultation status
+    if (consultationId) {
+      setConsultations((prev) =>
+        prev.map((c) => {
+          if (c.id === consultationId) {
+            return {
+              ...c,
+              status: 'completed',
+              updatedAt: 'هم‌اکنون',
+              specialistReview: {
+                doctorId: currentDoctor.id,
+                doctorName: currentDoctor.name,
+                reviewedAt: `${nowDate} - ${nowTime}`,
+                diagnosis,
+                clinicalGuidance,
+                prescriptionsOrRecommendations: prescriptions,
+                requestedAdditionalInfo: false,
+              },
+            };
+          }
+          return c;
+        })
+      );
+    }
+
+    // 3. Create Notification for Patient
+    const notif: InAppNotification = {
+      id: `notif-${Date.now()}`,
+      type: 'specialist_reply',
+      title: `پاسخ جدید در صفحه چت از ${currentDoctor.name}`,
+      message: `تشخیص: ${diagnosis} — توصیه‌ها و دستورات دارویی مستقیماً در صفحه چت شما قرار گرفت.`,
+      timestamp: 'هم‌اکنون',
+      read: false,
+      consultationId,
+      doctorName: currentDoctor.name,
+      actionTab: 'ai_chat',
+      highlightBadge: 'پاسخ پزشک',
+    };
+    setNotifications((prev) => [notif, ...prev]);
+    setActiveToast(notif);
+  };
+
   // Handler for Role Switching
   const handleRoleChange = (role: ActiveRole) => {
     setActiveRole(role);
@@ -178,6 +392,9 @@ export default function App() {
       setCurrentDoctor(DOCTORS[0]);
     } else if (role === 'specialist_doctor') {
       setCurrentDoctor(DOCTORS[1]);
+      setCurrentTab('doctor_referrals');
+    } else {
+      setCurrentTab('landing');
     }
   };
 
@@ -209,33 +426,89 @@ export default function App() {
         onTriggerSimulatedNotif={handleTriggerSimulatedNotif}
       />
 
-      {/* Quick Ideation & Patent Context Banner */}
-      <div className="bg-gradient-to-r from-rose-50 via-white to-amber-50 border-b border-rose-100/80 px-4 py-2 sm:px-6">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
-          <div className="flex items-center gap-2 text-slate-700">
-            <span className="p-1 rounded-md bg-rose-600 text-white font-mono font-bold text-[10px]">
-              PATENT BLUEPRINT
-            </span>
-            <span className="font-semibold text-slate-800">
-              پیاده‌سازی سبک طراحی و معماری پتنت اولیه Tele D در قالب کلینیک مجازی قلب و عروق مرکز جامع سلامت
-            </span>
-          </div>
+      {/* Quick Ideation & Patent Context Banner (Hidden on landing and chat for minimalist feel) */}
+      {currentTab !== 'landing' && currentTab !== 'ai_chat' && (
+        <div className="bg-gradient-to-r from-rose-50 via-white to-amber-50 border-b border-rose-100/80 px-4 py-2 sm:px-6">
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
+            <div className="flex items-center gap-2 text-slate-700">
+              <span className="p-1 rounded-md bg-rose-600 text-white font-mono font-bold text-[10px]">
+                PATENT BLUEPRINT
+              </span>
+              <span className="font-semibold text-slate-800">
+                پیاده‌سازی سبک طراحی و معماری پتنت اولیه Tele D در قالب کلینیک مجازی قلب و عروق مرکز جامع سلامت
+              </span>
+            </div>
 
-          <button
-            onClick={() => setPatentModalOpen(true)}
-            className="inline-flex items-center gap-1.5 text-rose-700 hover:text-rose-900 font-bold hover:underline shrink-0"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-rose-600" />
-            <span>مشاهده تطبیق هر یک از ۷ تصویر اسکچ با اجزای این سایت</span>
-          </button>
+            <button
+              onClick={() => setPatentModalOpen(true)}
+              className="inline-flex items-center gap-1.5 text-rose-700 hover:text-rose-900 font-bold hover:underline shrink-0"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-rose-600" />
+              <span>مشاهده تطبیق هر یک از ۷ تصویر اسکچ با اجزای این سایت</span>
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Main Content Area Based on Active Role & Tab */}
       <main className="flex-1 pb-16">
         
-        {/* ROLE 1: PATIENT PORTAL */}
-        {activeRole === 'patient' && (
+        {/* 1. NEW LANDING HERO (MATCHES USER UPLOADED SCREENSHOT EXACTLY) */}
+        {currentTab === 'landing' && (
+          <ClinicLandingHero
+            onStartTriageChat={handleStartTriageChat}
+            onOpenChatHistory={() => {
+              setCurrentTab('ai_chat');
+            }}
+            onOpenLoginOrRoles={() => setAuthModalOpen(true)}
+            onOpenEmergencyContacts={() => {
+              setActiveRole('patient');
+              setCurrentTab('profile');
+            }}
+            activePatientName={`${currentPatient.firstName} ${currentPatient.lastName}`}
+            isDoctorMode={activeRole !== 'patient'}
+          />
+        )}
+
+        {/* 2. CHATGPT / CLAUDE / GEMINI STYLE EMPATHETIC AI TRIAGE CHAT */}
+        {currentTab === 'ai_chat' && (
+          <CardiacTriageChat
+            sessions={chatSessions}
+            activeSessionId={activeChatSessionId}
+            onSelectSession={(id) => setActiveChatSessionId(id)}
+            onNewSession={handleNewChatSession}
+            onDeleteSession={handleDeleteChatSession}
+            onUpdateSession={handleUpdateChatSession}
+            onReferToDoctor={handleReferToDoctor}
+            onBackToHome={() => setCurrentTab('landing')}
+            onOpenDoctorPanel={() => {
+              setActiveRole('specialist_doctor');
+              setCurrentTab('doctor_referrals');
+            }}
+            onOpenEmergencyContacts={() => {
+              setActiveRole('patient');
+              setCurrentTab('profile');
+            }}
+          />
+        )}
+
+        {/* 3. DOCTOR REFERRALS PANEL (SINGLE PAGE WITH PATIENT LIST & CHAT TRANSCRIPTS) */}
+        {(currentTab === 'doctor_referrals' || activeRole === 'specialist_doctor') && (
+          <DoctorReferralsPanel
+            doctor={currentDoctor}
+            consultations={consultations}
+            chatSessions={chatSessions}
+            onBackToHome={() => {
+              setActiveRole('patient');
+              setCurrentTab('landing');
+            }}
+            onSendDoctorResponseToChat={handleDoctorSendResponseToChat}
+            onOpenECGModal={(doc) => setActiveECGDoc(doc)}
+          />
+        )}
+
+        {/* ROLE 1: PATIENT PORTAL (OTHER EXISTING TABS) */}
+        {activeRole === 'patient' && currentTab !== 'landing' && currentTab !== 'ai_chat' && currentTab !== 'doctor_referrals' && (
           <>
             {/* Step 1: Patent Page 1 (صفحه اول - ص ۱ پتنت) */}
             {(currentTab === 'page_one' || currentTab === 'disclaimer') && (
@@ -322,20 +595,10 @@ export default function App() {
         )}
 
         {/* ROLE 2: LEVEL 1 TRIAGE DOCTOR VIEW (صفحه ۳ پتنت) */}
-        {activeRole === 'triage_doctor' && (
+        {activeRole === 'triage_doctor' && currentTab !== 'landing' && currentTab !== 'ai_chat' && (
           <TriageDoctorView
             consultations={consultations}
             triageDoctor={triageDoctor}
-            onUpdateConsultation={handleUpdateConsultation}
-            onOpenECGModal={(doc) => setActiveECGDoc(doc)}
-          />
-        )}
-
-        {/* ROLE 3: LEVEL 2 SPECIALIST CARDIOLOGIST VIEW (صفحه ۶ پتنت) */}
-        {activeRole === 'specialist_doctor' && (
-          <SpecialistDoctorView
-            consultations={consultations}
-            doctor={currentDoctor}
             onUpdateConsultation={handleUpdateConsultation}
             onOpenECGModal={(doc) => setActiveECGDoc(doc)}
           />
