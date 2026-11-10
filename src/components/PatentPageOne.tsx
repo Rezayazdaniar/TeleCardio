@@ -7,13 +7,11 @@ import {
 interface Props {
   onStartLogin: () => void;
   onExit: () => void;
-  onOpenPatentCompare: () => void;
 }
 
 export const PatentPageOne: React.FC<Props> = ({
   onStartLogin,
   onExit,
-  onOpenPatentCompare,
 }) => {
   const [viewMode, setViewMode] = useState<'app' | 'sketch_frame'>('app');
   const [acceptedDisclaimer, setAcceptedDisclaimer] = useState(false);
@@ -29,10 +27,10 @@ export const PatentPageOne: React.FC<Props> = ({
           </span>
           <div>
             <h2 className="font-extrabold text-sm text-slate-900">
-              صفحه ابتدایی پتنت (صفحه اول - ص ۱)
+              شرایط استفاده از خدمات مشاوره
             </h2>
             <p className="text-xs text-slate-500">
-              ورودی اولیه سامانه Tele D: تعهدنامه و تفکیک مشاوره غیرحضوری از اورژانس
+              پیش از ادامه، شرایط مشاوره غیرحضوری و موارد اورژانسی را مطالعه کنید.
             </p>
           </div>
         </div>
@@ -44,17 +42,9 @@ export const PatentPageOne: React.FC<Props> = ({
             className="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 bg-slate-50 hover:bg-slate-100 transition-colors flex items-center gap-1.5"
           >
             <Smartphone className="w-3.5 h-3.5 text-rose-600" />
-            <span>{viewMode === 'app' ? 'نمایش در قالب فریم گوشی (مشابه اسکچ)' : 'نمایش استاندارد تمام صفحه'}</span>
+            <span>{viewMode === 'app' ? 'نمایش در قالب گوشی' : 'نمایش استاندارد تمام صفحه'}</span>
           </button>
-
-          <button
-            onClick={onOpenPatentCompare}
-            className="px-3 py-1.5 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 text-xs font-bold hover:bg-rose-100 transition-colors flex items-center gap-1.5"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-rose-600" />
-            <span>بررسی ایده پتنت</span>
-          </button>
-        </div>
+</div>
       </div>
 
       {/* Main Container */}
@@ -129,21 +119,6 @@ export const PatentPageOne: React.FC<Props> = ({
               </p>
             </div>
 
-            {/* Emergency Hotline Alert */}
-            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs text-slate-600">
-              <div className="flex items-center gap-2">
-                <ShieldAlert className="w-4 h-4 text-red-600 shrink-0" />
-                <span>درد شدید قفسه سینه یا تنگی نفس حاد؟ فوراً تماس بگیرید:</span>
-              </div>
-              <a
-                href="tel:115"
-                className="font-bold text-red-600 hover:text-red-700 flex items-center gap-1 shrink-0 bg-red-50 px-2.5 py-1 rounded-lg border border-red-200"
-              >
-                <PhoneCall className="w-3.5 h-3.5" />
-                <span>اورژانس ۱۱۵</span>
-              </a>
-            </div>
-
             {/* Checkbox agreement */}
             <label
               onClick={() => setAcceptedDisclaimer(!acceptedDisclaimer)}
@@ -206,13 +181,6 @@ export const PatentPageOne: React.FC<Props> = ({
         )}
 
       </div>
-
-      {/* Footer annotation identifying the patent origin */}
-      <div className="text-center mt-6 text-xs text-slate-400 flex items-center justify-center gap-2">
-        <FileText className="w-4 h-4 text-slate-400" />
-        <span>منطبق با اسکچ دست‌نویس صفحه ۱ پتنت (ص ۱) — عنوان سامانه: Tele D</span>
-      </div>
-
-    </div>
+</div>
   );
 };

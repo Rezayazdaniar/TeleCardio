@@ -83,13 +83,13 @@ export const MedicalReportPDFModal: React.FC<Props> = ({
             </div>
             <div>
               <h3 className="font-bold text-sm sm:text-base text-slate-100 flex items-center gap-2">
-                <span>پیش‌نمایش برگه رسمی پرونده پزشکی و ارزیابی قلب</span>
+                <span>پیش‌نمایش گزارش اطلاعات ثبت‌شده پزشکی</span>
                 <span className="text-[10px] bg-rose-500/20 text-rose-300 border border-rose-500/30 px-2 py-0.5 rounded-full font-mono">
                   ISO-A4 PDF
                 </span>
               </h3>
               <p className="text-xs text-slate-400">
-                با آرم رسمی مرکز سلامت، مهر نظام پزشکی و امضای دیجیتال پزشک معالج
+                گزارش اطلاعات ثبت‌شده در سامانه؛ اعتبارسنجی مستقل انجام نشده است
               </p>
             </div>
           </div>
@@ -131,24 +131,24 @@ export const MedicalReportPDFModal: React.FC<Props> = ({
             style={{ minHeight: '1050px' }}
           >
             
-            {/* 1. Official Header with Health Center Logo & National Telemedicine Banner */}
+            {/* 1. TeleCardio report header */}
             <div className="border-b-2 border-slate-900 pb-5">
               <div className="flex items-center justify-between">
                 
-                {/* Right Logo & Ministry Branding */}
+                {/* TeleCardio branding */}
                 <div className="flex items-center gap-3">
                   <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-rose-700 to-red-600 text-white flex items-center justify-center shadow-md">
                     <Heart className="w-8 h-8 fill-white text-rose-700" />
                   </div>
                   <div>
                     <h2 className="font-black text-sm sm:text-base text-slate-950">
-                      جمهوری اسلامی ایران
+                      TeleCardio
                     </h2>
                     <h3 className="font-extrabold text-xs sm:text-sm text-slate-800">
-                      وزارت بهداشت، درمان و آموزش پزشکی
+                      گزارش اطلاعات ثبت‌شده
                     </h3>
                     <p className="text-[11px] text-rose-700 font-bold">
-                      مرکز خدمات جامع سلامت — کلینیک مجازی تخصصی قلب و عروق (TeleCardio)
+                      خلاصه اطلاعات ثبت‌شده در سامانه
                     </p>
                   </div>
                 </div>
@@ -163,7 +163,7 @@ export const MedicalReportPDFModal: React.FC<Props> = ({
                   <div className="text-[10px] font-mono text-slate-500 mt-1">
                     <div>شماره پرونده: <span className="font-bold text-slate-900">{consultation.id}</span></div>
                     <div>تاریخ صدور: <span className="font-bold text-slate-900">{consultation.updatedAt}</span></div>
-                    <div>اعتبار: <span className="text-emerald-700 font-bold">تأییدشده سیستمی</span></div>
+                    <div>وضعیت اعتبارسنجی: <span className="text-slate-700 font-bold">اعتبارسنجی مستقل انجام نشده</span></div>
                   </div>
                 </div>
 
@@ -171,7 +171,7 @@ export const MedicalReportPDFModal: React.FC<Props> = ({
 
               <div className="text-center mt-3 pt-2 border-t border-slate-200">
                 <span className="inline-block bg-slate-900 text-white px-4 py-1 rounded-md font-bold text-xs">
-                  گزارش رسمی خلاصه ویزیت و ارزیابی تشخیصی تله‌کاردیولوژی
+                  گزارش خلاصه اطلاعات ثبت‌شده پزشکی
                 </span>
               </div>
             </div>
@@ -200,11 +200,11 @@ export const MedicalReportPDFModal: React.FC<Props> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3 pt-2 border-t border-slate-200 text-[11px]">
                 <div>
                   <span className="text-slate-500 font-bold">سوابق پزشکی زمینه‌ای:</span>{' '}
-                  <span className="text-slate-800">{patient.medicalHistory.join('، ') || 'بدون سابقه قبلی'}</span>
+                  <span className="text-slate-800">{patient.medicalHistory.length ? patient.medicalHistory.join('، ') : 'سابقه پزشکی ثبت نشده است'}</span>
                 </div>
                 <div>
                   <span className="text-slate-500 font-bold">آخرین فشار خون پایش‌شده:</span>{' '}
-                  <span className="font-mono font-bold text-rose-700">{patient.bloodPressure || '۱۳۵ / ۸۵ mmHg'}</span>
+                  <span className="font-mono font-bold text-rose-700">{patient.bloodPressure || 'ثبت نشده است'}</span>
                 </div>
               </div>
             </div>
@@ -220,24 +220,34 @@ export const MedicalReportPDFModal: React.FC<Props> = ({
               </div>
             </div>
 
-            {/* 4. Paraclinical Findings Summary (از صفحه ۵ پتنت) */}
+            {/* 4. Recorded Paraclinical Documents */}
             <div className="space-y-1.5 text-xs">
-              <h4 className="font-bold text-slate-950 flex items-center gap-1.5 border-r-4 border-blue-600 pr-2">
-                <span>یافته‌های پاراکلینیکی بررسی‌شده (ECG، اکوکاردیوگرافی و آزمایشات):</span>
+              <h4 className="font-bold text-slate-950 border-r-4 border-blue-600 pr-2">
+                مدارک پاراکلینیکی ثبت‌شده:
               </h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
-                <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-200">
-                  <span className="font-bold text-slate-900 block">نوار قلب ۱۲ لید استاندارد:</span>
-                  <p className="text-slate-700 mt-0.5">
-                    ریتم تاکی‌کاردی سینوسی با ضربان ۱۰۴ bpm، فاقد شواهد صریح بالا یا افتادگی قطعه ST، فواصل زمانی نرمال.
+              <div className="space-y-2 text-[11px]">
+                {consultation.documents?.length ? consultation.documents.map((doc) => (
+                  <div key={doc.id} className="p-2.5 bg-slate-50 rounded-lg border border-slate-200">
+                    <div className="font-bold text-slate-900">{doc.title || doc.fileName}</div>
+                    <div className="text-slate-600 mt-1">نوع مدرک: {doc.type}</div>
+                    {doc.date && <div className="text-slate-600">تاریخ مدرک: {doc.date}</div>}
+                    {doc.notes && <p className="text-slate-700 mt-1 whitespace-pre-line">{doc.notes}</p>}
+                    {doc.ecgData && (
+                      <div className="text-slate-700 mt-1 space-y-0.5">
+                        <div>ضربان قلب ثبت‌شده: {doc.ecgData.heartRate}</div>
+                        <div>ریتم ثبت‌شده: {doc.ecgData.rhythm}</div>
+                        {doc.ecgData.prInterval != null && <div>فاصله PR: {doc.ecgData.prInterval}</div>}
+                        {doc.ecgData.qrsDuration != null && <div>مدت QRS: {doc.ecgData.qrsDuration}</div>}
+                        {doc.ecgData.qtc != null && <div>QTc: {doc.ecgData.qtc}</div>}
+                        {doc.ecgData.stChanges && <div>تغییرات ST ثبت‌شده: {doc.ecgData.stChanges}</div>}
+                      </div>
+                    )}
+                  </div>
+                )) : (
+                  <p className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-slate-600">
+                    مدرکی برای این مشاوره ثبت نشده است.
                   </p>
-                </div>
-                <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-200">
-                  <span className="font-bold text-slate-900 block">اکوکاردیوگرافی داپلر:</span>
-                  <p className="text-slate-700 mt-0.5">
-                    کسر انقباض بطن چپ EF=55% (طبیعی)، نارسایی خفیف دریچه میترال (Mild MR)، حفرات نرمال.
-                  </p>
-                </div>
+                )}
               </div>
             </div>
 
@@ -250,7 +260,7 @@ export const MedicalReportPDFModal: React.FC<Props> = ({
               <div className="p-4 bg-emerald-50/60 rounded-xl border border-emerald-300 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="font-extrabold text-sm text-emerald-950">
-                    تشخیص: {specialist?.diagnosis || 'آریتمی فوق بطنی خوش‌خیم و اضطراب'}
+                    تشخیص: {specialist?.diagnosis || 'تشخیص متخصص ثبت نشده است'}
                   </span>
                   <span className="text-[10px] text-slate-500 font-mono">
                     تاریخ ثبت: {specialist?.reviewedAt || consultation.updatedAt}
@@ -258,7 +268,7 @@ export const MedicalReportPDFModal: React.FC<Props> = ({
                 </div>
 
                 <p className="text-slate-800 leading-relaxed text-xs whitespace-pre-line font-medium">
-                  {specialist?.clinicalGuidance || 'بررسی نوار قلب و اکوکاردیوگرافی نشان‌دهنده عملکرد مناسب ماهیچه قلب است.'}
+                  {specialist?.clinicalGuidance || 'راهنمایی بالینی متخصص ثبت نشده است'}
                 </p>
               </div>
             </div>
@@ -270,11 +280,9 @@ export const MedicalReportPDFModal: React.FC<Props> = ({
               </h4>
 
               <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
-                {(specialist?.prescriptionsOrRecommendations || [
-                  'قرص پروپرانولول ۱۰ میلی‌گرم صبح و شب در صورت احساس تپش قلب',
-                  'پرهیز جدی از چای غلیظ، قهوه، نوشابه‌های انرژی‌زا و استرس شدید',
-                  'کنترل منظم فشار خون و ثبت دو نوبت در روز در جدول هفتگی',
-                ]).map((rx, idx) => (
+                {(specialist?.prescriptionsOrRecommendations?.length
+                  ? specialist.prescriptionsOrRecommendations
+                  : ['توصیه یا دستور دارویی ثبت نشده است']).map((rx, idx) => (
                   <div key={idx} className="flex items-center gap-2 text-[11px] text-slate-800">
                     <span className="w-1.5 h-1.5 rounded-full bg-slate-800 shrink-0" />
                     <span>{rx}</span>
@@ -283,37 +291,24 @@ export const MedicalReportPDFModal: React.FC<Props> = ({
               </div>
             </div>
 
-            {/* 7. Official Stamps & Signatures */}
-            <div className="pt-4 border-t border-slate-200 grid grid-cols-2 gap-4 text-xs">
-              
-              {/* Health Center Stamp */}
-              <div className="p-3 rounded-xl border border-dashed border-slate-300 text-center space-y-1">
-                <div className="inline-flex items-center justify-center p-1.5 bg-rose-50 rounded-full text-rose-700">
-                  <Hospital className="w-4 h-4" />
+            {/* 7. Recorded Reviewer Information; no simulated seals */}
+            <div className="pt-4 border-t border-slate-200 text-xs">
+              <div className="p-3 rounded-xl border border-slate-300 text-center space-y-1">
+                <div className="font-bold text-slate-800">اطلاعات ثبت‌شده بررسی‌کننده</div>
+                <div className="text-slate-700">
+                  نام متخصص: {specialist?.doctorName || 'ثبت نشده است'}
                 </div>
-                <div className="font-bold text-slate-800 text-[11px]">مهر رسمی مرکز خدمات جامع سلامت</div>
-                <div className="text-[10px] text-slate-500">واحد تله‌کاردیولوژی و مراقبت‌های اولیه</div>
-                <div className="font-mono text-[9px] text-slate-400">AUTHENTICATED HEALTH CENTER</div>
+                <div className="text-slate-600">
+                  تاریخ بررسی: {specialist?.reviewedAt || 'ثبت نشده است'}
+                </div>
+                <div className="text-[10px] text-slate-500">
+                  مهر، شماره نظام پزشکی و امضای دیجیتال در این گزارش اعتبارسنجی نشده‌اند.
+                </div>
               </div>
-
-              {/* Specialist Doctor Seal & Signature */}
-              <div className="p-3 rounded-xl border border-dashed border-emerald-300 bg-emerald-50/20 text-center space-y-1">
-                <div className="inline-flex items-center justify-center p-1.5 bg-emerald-50 rounded-full text-emerald-700">
-                  <ShieldCheck className="w-4 h-4" />
-                </div>
-                <div className="font-bold text-slate-900 text-[11px]">
-                  {specialist ? specialist.doctorName : 'دکتر کامران سهرابی'}
-                </div>
-                <div className="text-[10px] text-emerald-800 font-semibold">فوق تخصص بیماری‌های قلب و عروق</div>
-                <div className="text-[10px] text-slate-500 font-mono">نظام پزشکی: ۸۹۴۳۰</div>
-                <div className="text-[9px] text-emerald-600 font-bold">امضای دیجیتال تأیید شد ✓</div>
-              </div>
-
             </div>
 
-            {/* 8. Official Telemedicine Disclaimer (از صفحه اول پتنت) */}
-            <div className="text-[9px] text-slate-400 text-center pt-2 border-t border-slate-200 leading-relaxed">
-              این برگه بر اساس ارزیابی مدارک پاراکلینیکی در بستر سامانه مشاوره پزشکی از راه دور TeleCardio صادر گردیده و نسخه چاپی معتبر است. در صورت بروز هرگونه علائم حاد فشاری قفسه سینه فوراً با ۱۱۵ تماس حاصل فرمایید.
+            <div className="text-[9px] text-slate-500 text-center pt-2 border-t border-slate-200 leading-relaxed">
+              این گزارش صرفاً اطلاعات ثبت‌شده در سامانه را نمایش می‌دهد؛ اصالت مدارک یا امضاها را مستقلاً تأیید نمی‌کند و جایگزین ارزیابی پزشک نیست. در صورت بروز علائم حاد یا درد شدید قفسه سینه، فوراً با اورژانس محلی تماس بگیرید.
             </div>
 
           </div>

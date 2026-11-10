@@ -1,4 +1,4 @@
-export type TriageSeverity = 'low' | 'moderate' | 'high' | 'emergency';
+export type TriageSeverity = 'low' | 'moderate' | 'high' | 'critical' | 'emergency';
 
 export type ConsultationStatus = 
   | 'triage_pending'       // در انتظار بررسی تریاژ سطح اول
@@ -9,11 +9,15 @@ export type ConsultationStatus =
 
 export interface CardiacDocument {
   id: string;
+  consultationId?: string;
   type: 'ecg' | 'echo' | 'lab_enzymes' | 'holter' | 'angio' | 'prescription' | 'other';
   title: string;
   date: string;
   fileName: string;
-  fileSize: string;
+  fileSize: string | number;
+  mimeType?: string;
+  downloadUrl?: string;
+  createdAt?: string;
   notes?: string;
   previewUrl?: string;
   ecgData?: {
@@ -58,7 +62,9 @@ export interface PatientUser {
   email?: string;
   username: string;
   age: number;
-  gender: 'مرد' | 'زن';
+  gender: 'مرد' | 'زن' | 'ترجیح می‌دهم پاسخ ندهم' | 'سایر' | '';
+  nationality?: string;
+  occupation?: string;
   bloodPressure?: string;
   medicalHistory: string[];
   currentMedications: string[];
@@ -71,8 +77,8 @@ export interface ConsultationInquiry {
   patientId: string;
   patientName: string;
   patientPhone: string;
-  patientAge: number;
-  patientGender: 'مرد' | 'زن';
+  patientAge?: number;
+  patientGender?: 'مرد' | 'زن' | 'ترجیح می‌دهم پاسخ ندهم' | 'سایر';
   targetDoctorId: string;
   targetDoctorName: string;
   createdAt: string;
@@ -82,6 +88,13 @@ export interface ConsultationInquiry {
   chiefComplaint: string;
   symptomsDuration: string;
   symptomsDescription: string;
+  intakeAnswers?: Array<{
+    id: string;
+    section: number;
+    sectionTitle: string;
+    question: string;
+    answer: string | string[];
+  }>;
   chestPainDetails?: {
     painType: string;
     radiatingTo: string[];
@@ -89,10 +102,10 @@ export interface ConsultationInquiry {
     associatedSymptoms: string[];
   };
 
-  // Uploaded Cardiac Documents (from Patent Page 5)
+  // Uploaded cardiac documents
   documents: CardiacDocument[];
 
-  // Triage Phase (from Patent Page 3)
+  // Triage phase
   triage?: {
     doctorId: string;
     doctorName: string;
@@ -103,7 +116,7 @@ export interface ConsultationInquiry {
     initialGuidance?: string;
   };
 
-  // Specialist Phase (from Patent Page 6)
+  // Specialist review phase
   specialistReview?: {
     doctorId: string;
     doctorName: string;
@@ -118,12 +131,18 @@ export interface ConsultationInquiry {
     additionalDocumentsNeeded?: string[];
   };
 
-  // Patient Supplemental Submission (from Patent Page 7)
+  // Patient supplemental submission
   supplementalResponse?: {
     submittedAt: string;
     patientNotes: string;
     additionalDocuments: CardiacDocument[];
   };
+
+  // خلاصهٔ کمکی تولیدشده توسط هوش مصنوعی؛ فقط برای پزشک تریاژ
+  aiIntakeSummary?: string;
+
+  // وضعیت مشاهده پرونده توسط پزشک تریاژ فعلی
+  isRead?: boolean;
 
   status: ConsultationStatus;
 }
@@ -144,6 +163,6 @@ export interface InAppNotification {
   read: boolean;
   consultationId?: string;
   doctorName?: string;
-  actionTab?: 'page_one' | 'inquiry_form' | 'telemetry' | 'history' | 'result' | 'profile' | 'landing' | 'ai_chat' | 'doctor_referrals';
+  actionTab?: 'page_one' | 'telemetry' | 'history' | 'result' | 'profile' | 'landing' | 'ai_chat' | 'doctor_referrals';
   highlightBadge?: string;
 }

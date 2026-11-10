@@ -4,12 +4,31 @@ import {
   Eye, CheckCircle, Activity, AlertTriangle, ArrowRight, ArrowLeft,
   FileCheck, Sparkles, Clock, ShieldCheck
 } from 'lucide-react';
-import { Doctor, PatientUser, CardiacDocument, ConsultationInquiry } from '../types';
-import { DOCTORS, SAMPLE_DOCUMENTS } from '../data/mockData';
+import { PatientUser, CardiacDocument, ConsultationInquiry } from '../types';
+
+export interface ConsultationCreateInput {
+  chiefComplaint: string;
+  symptomsDuration: string;
+  symptomsDescription: string;
+  chestPainDetails: {
+    painType: string;
+    radiatingTo: string[];
+    triggers: string[];
+    associatedSymptoms: string[];
+  };
+}
+
+export interface PendingMedicalDocument extends CardiacDocument {
+  file: File;
+  documentDate: string;
+}
 
 interface Props {
   patient: PatientUser;
-  onSubmit: (inquiry: Omit<ConsultationInquiry, 'id' | 'createdAt' | 'updatedAt' | 'status'>) => void;
+  onSubmit: (
+    inquiry: ConsultationCreateInput,
+    documents: PendingMedicalDocument[]
+  ) => void | Promise<void>;
   onOpenECGModal: (doc: CardiacDocument) => void;
 }
 
@@ -18,7 +37,6 @@ export const PatientInquiryForm: React.FC<Props> = ({ patient, onSubmit, onOpenE
   const [formStep, setFormStep] = useState<1 | 2>(1);
 
   // Form states (Page 2)
-  const [selectedDoctorId, setSelectedDoctorId] = useState<string>(DOCTORS[1].id); // Default: Dr. Sohrabi or Triage
   const [chiefComplaint, setChiefComplaint] = useState<string>('');
   const [symptomsDuration, setSymptomsDuration] = useState<string>('کمتر از یک هفته');
   const [symptomsDescription, setSymptomsDescription] = useState<string>('');
@@ -29,16 +47,14 @@ export const PatientInquiryForm: React.FC<Props> = ({ patient, onSubmit, onOpenE
   const [triggers, setTriggers] = useState<string[]>(['فعالیت بدنی یا بالا رفتن از پله']);
   const [associatedSymptoms, setAssociatedSymptoms] = useState<string[]>(['تپش قلب']);
 
-  // Document states (Page 5)
-  const [attachedDocs, setAttachedDocs] = useState<CardiacDocument[]>([SAMPLE_DOCUMENTS[0]]); // Preloaded with ECG
-
-  // Custom document upload draft modal
-  const [showUploadDraft, setShowUploadDraft] = useState(false);
-  const [docCategory, setDocCategory] = useState<CardiacDocument['type']>('ecg');
-  const [docTitle, setDocTitle] = useState('');
-  const [docNotes, setDocNotes] = useState('');
-
-  const selectedDoctor = DOCTORS.find((d) => d.id === selectedDoctorId) || DOCTORS[0];
+  // فایل‌های واقعی انتخاب‌شده برای بارگذاری
+  const [attachedDocs, setAttachedDocs] = useState<PendingMedicalDocument[]>([]);
+  const [documentType, setDocumentType] = useState<PendingMedicalDocument['type']>('ecg');
+  const [documentTitle, setDocumentTitle] = useState('');
+  const [documentNotes, setDocumentNotes] = useState('');
+  const [documentDate, setDocumentDate] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   const toggleArrayItem = (list: string[], item: string, setter: (val: string[]) => void) => {
     if (list.includes(item)) {
@@ -48,74 +64,46 @@ export const PatientInquiryForm: React.FC<Props> = ({ patient, onSubmit, onOpenE
     }
   };
 
-  const handleAddSampleDoc = (doc: CardiacDocument) => {
-    if (!attachedDocs.some((d) => d.id === doc.id)) {
-      setAttachedDocs([...attachedDocs, doc]);
-    }
-  };
+  const handleFinalSubmit = async () => {
+    if (isSubmitting) return;
 
-  const handleAddCustomDoc = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!docTitle) return;
-
-    const newDoc: CardiacDocument = {
-      id: `doc-user-${Date.now()}`,
-      type: docCategory,
-      title: docTitle,
-      date: '۱۴۰۳/۰۷/۲۵',
-      fileName: `${docTitle.replace(/\s+/g, '_')}.pdf`,
-      fileSize: '۱.۸ مگابایت',
-      notes: docNotes || 'مدارک بارگذاری شده توسط بیمار در مرکز سلامت',
-    };
-
-    setAttachedDocs([...attachedDocs, newDoc]);
-    setDocTitle('');
-    setDocNotes('');
-    setShowUploadDraft(false);
-  };
-
-  const handleFinalSubmit = () => {
-    if (!chiefComplaint || !symptomsDescription) {
-      alert('لطفاً عنوان سوال و شرح حال علائم خود را کامل بنویسید.');
-      setFormStep(1);
+    if (!chiefComplaint.trim() || !symptomsDescription.trim()) {
+      setSubmitError('لطفاً عنوان اصلی و شرح کامل علائم را وارد کنید.');
       return;
     }
 
-    onSubmit({
-      patientId: patient.id,
-      patientName: `${patient.firstName} ${patient.lastName}`,
-      patientPhone: patient.phoneNumber,
-      patientAge: patient.age,
-      patientGender: patient.gender,
-      targetDoctorId: selectedDoctor.id,
-      targetDoctorName: selectedDoctor.name,
-      chiefComplaint,
-      symptomsDuration,
-      symptomsDescription,
-      chestPainDetails: {
-        painType: chestPainType,
-        radiatingTo,
-        triggers,
-        associatedSymptoms,
-      },
-      documents: attachedDocs,
-    });
+    setIsSubmitting(true);
+    setSubmitError('');
+
+    try {
+      await onSubmit(
+        {
+          chiefComplaint: chiefComplaint.trim(),
+          symptomsDuration,
+          symptomsDescription: symptomsDescription.trim(),
+          chestPainDetails: {
+            painType: chestPainType,
+            radiatingTo,
+            triggers,
+            associatedSymptoms,
+          },
+        },
+        attachedDocs
+      );
+    } catch (error) {
+      setSubmitError(
+        error instanceof Error
+          ? error.message
+          : 'ثبت درخواست انجام نشد. لطفاً دوباره تلاش کنید.'
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  // Quick preset helper for fast testing
-  const applyPresetScenario = () => {
-    setChiefComplaint('احساس تپش قلب ناگهانی و تیر کشیدن سینه حین استرس');
-    setSymptomsDuration('حدود ۲ هفته به صورت متناوب');
-    setSymptomsDescription('در زمان‌های استرس کاری یا بعد از پیاده‌روی سریع احساس می‌کنم قلبم تند می‌زند و گاهی ضربان محکم می‌کوبد. نوار قلب و آزمایش آنزیم‌های قلبی در درمانگاه گرفتم که پیوست می‌کنم.');
-    setChestPainType('احساس تیر کشیدن خنجری گذرا و تپش سریع');
-    setRadiatingTo(['ندارد']);
-    setTriggers(['استرس روحی', 'هوای گرم']);
-    setAssociatedSymptoms(['تپش قلب', 'اضطراب']);
-    setAttachedDocs([SAMPLE_DOCUMENTS[0], SAMPLE_DOCUMENTS[1], SAMPLE_DOCUMENTS[2]]);
-  };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="w-full max-w-4xl mx-auto px-3 sm:px-4 py-5 sm:py-8">
       
       {/* Patent Step Progress Indicator */}
       <div className="mb-8">
@@ -133,7 +121,7 @@ export const PatientInquiryForm: React.FC<Props> = ({ patient, onSubmit, onOpenE
             }`}>
               ۱
             </div>
-            <span className="text-xs">صفحه ۲ پتنت: انتخاب پزشک و ثبت سوال</span>
+            <span className="text-xs">ثبت شرح حال و پرسش</span>
           </button>
 
           <button
@@ -150,7 +138,7 @@ export const PatientInquiryForm: React.FC<Props> = ({ patient, onSubmit, onOpenE
             }`}>
               ۲
             </div>
-            <span className="text-xs">صفحه ۵ پتنت: ثبت و آپلود مدارک قلب</span>
+            <span className="text-xs">ثبت و بارگذاری مدارک قلب</span>
           </button>
         </div>
       </div>
@@ -177,66 +165,13 @@ export const PatientInquiryForm: React.FC<Props> = ({ patient, onSubmit, onOpenE
             </div>
           </div>
 
-          {/* Preset helper button */}
-          <button
-            type="button"
-            onClick={applyPresetScenario}
-            className="px-3.5 py-1.5 bg-rose-950/80 hover:bg-rose-900 text-rose-200 border border-rose-500/30 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors self-end sm:self-center"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-rose-400" />
-            <span>تکمیل خودکار سناریوی نمونه (جهت تست)</span>
-          </button>
+
         </div>
 
-        {/* STEP 1: PATENT PAGE 2 (انتخاب پزشک و سوال) */}
+        {/* STEP 1: ثبت شرح حال و پرسش */}
         {formStep === 1 && (
-          <div className="p-6 sm:p-8 space-y-6">
+          <div className="p-4 sm:p-6 lg:p-8 space-y-6">
             
-            {/* Doctor Selection (from Patent Page 2: "انتخاب پزشک - وقتی کلیک کنند اسم های دکترها و دسترسیشان می آید") */}
-            <div className="space-y-2">
-              <label className="block text-sm font-bold text-slate-800 flex items-center gap-2">
-                <Stethoscope className="w-4 h-4 text-rose-600" />
-                <span>انتخاب پزشک مشاوره (مطابق صفحه ۲ پتنت):</span>
-              </label>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {DOCTORS.map((doc) => {
-                  const isSelected = selectedDoctorId === doc.id;
-                  return (
-                    <div
-                      key={doc.id}
-                      onClick={() => setSelectedDoctorId(doc.id)}
-                      className={`p-3.5 rounded-xl border-2 transition-all cursor-pointer flex items-center gap-3 ${
-                        isSelected
-                          ? 'border-rose-600 bg-rose-50/60 shadow-sm ring-1 ring-rose-500'
-                          : 'border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50/70'
-                      }`}
-                    >
-                      <img
-                        src={doc.avatar}
-                        alt={doc.name}
-                        className="w-12 h-12 rounded-xl object-cover shrink-0 border border-slate-200"
-                      />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between">
-                          <h4 className="text-xs sm:text-sm font-bold text-slate-900 truncate">{doc.name}</h4>
-                          {doc.isTriageDoctor && (
-                            <span className="text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded font-semibold">
-                              پزشک تریاژ
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-[11px] text-rose-700 font-semibold truncate">{doc.subSpecialty}</p>
-                        <p className="text-[10px] text-slate-500 truncate mt-0.5">
-                          سابقه: {doc.experienceYears} سال • ن.پ: {doc.medicalCouncilNumber}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
             {/* Structured Cardiovascular Symptoms Section */}
             <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-4">
               <div className="flex items-center justify-between">
@@ -300,7 +235,7 @@ export const PatientInquiryForm: React.FC<Props> = ({ patient, onSubmit, onOpenE
               </div>
             </div>
 
-            {/* Question Text Box (Patent Page 2: سوال / شرح حال) */}
+            {/* Question text box */}
             <div className="space-y-2">
               <label className="block text-sm font-bold text-slate-800 flex items-center justify-between">
                 <span className="flex items-center gap-1.5">
@@ -347,7 +282,7 @@ export const PatientInquiryForm: React.FC<Props> = ({ patient, onSubmit, onOpenE
                 }}
                 className="px-6 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl shadow-md text-sm flex items-center gap-2 transition-all"
               >
-                <span>مرحله بعد: ثبت و آپلود مدارک پزشکی (صفحه ۵ پتنت)</span>
+                <span>مرحله بعد: ثبت و بارگذاری مدارک پزشکی</span>
                 <ArrowLeft className="w-4 h-4" />
               </button>
             </div>
@@ -355,86 +290,147 @@ export const PatientInquiryForm: React.FC<Props> = ({ patient, onSubmit, onOpenE
           </div>
         )}
 
-        {/* STEP 2: PATENT PAGE 5 (ثبت مدارک پزشکی قلب) */}
+        {/* STEP 2: ثبت مدارک پزشکی قلب */}
         {formStep === 2 && (
-          <div className="p-6 sm:p-8 space-y-6">
+          <div className="p-4 sm:p-6 lg:p-8 space-y-6">
             
             {/* Summary preview of step 1 */}
-            <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-xs flex items-center justify-between">
+            <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-xs flex flex-wrap items-start justify-between gap-3">
               <div>
-                <span className="font-bold text-slate-700">پزشک انتخابی:</span> {selectedDoctor.name} ({selectedDoctor.title})
-                <div className="text-slate-500 mt-0.5 truncate max-w-lg">
-                  <span className="font-bold">موضوع:</span> {chiefComplaint}
-                </div>
+                <span className="font-bold text-slate-700">موضوع درخواست:</span> {chiefComplaint || 'هنوز وارد نشده است'}
               </div>
               <button
                 type="button"
                 onClick={() => setFormStep(1)}
-                className="text-rose-600 hover:underline font-semibold"
+                className="shrink-0 text-rose-600 hover:underline font-semibold"
               >
                 ویرایش شرح حال
               </button>
             </div>
 
-            {/* Patent Page 5 Documents mapping */}
+            {/* نمایش مدارک پیوست‌شده */}
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="text-sm font-bold text-slate-900 flex items-center gap-2">
                   <Upload className="w-4 h-4 text-rose-600" />
-                  <span>مدارک پزشکی تخصصی قلب (بر اساس طراحی صفحه ۵ پتنت):</span>
+                  <span>مدارک پزشکی تخصصی قلب:</span>
                 </label>
                 <span className="text-xs text-slate-500">
                   {attachedDocs.length} مدرک پیوست شده
                 </span>
               </div>
               <p className="text-xs text-slate-500 mb-4 leading-relaxed">
-                در پتنت اولیه مدارک مربوط به ماموگرافی و سونوگرافی پستان بود؛ در این سامانه کلینیک قلب، مدارک تخصصی شامل نوار قلب (ECG)، اکوکاردیوگرافی، آنزیم‌های قلبی، هولتر و آنژیوگرافی پیوست می‌گردد.
+                در صورت نیاز، مدارک مرتبط با ارزیابی قلب از جمله نوار قلب (ECG)، اکوکاردیوگرافی، آزمایش‌های مرتبط، هولتر و آنژیوگرافی را پیوست کنید.
               </p>
 
-              {/* Document upload quick add grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
-                {[
-                  { type: 'ecg', label: 'نوار قلب (ECG)', sample: SAMPLE_DOCUMENTS[0] },
-                  { type: 'echo', label: 'اکوکاردیوگرافی (Echo)', sample: SAMPLE_DOCUMENTS[1] },
-                  { type: 'lab_enzymes', label: 'آنزیم‌های قلبی و آزمایش', sample: SAMPLE_DOCUMENTS[2] },
-                  { type: 'holter', label: 'هولتر ریتم / فشار خون', sample: SAMPLE_DOCUMENTS[3] },
-                  { type: 'angio', label: 'سی‌تی آنژیو / آنژیوگرافی', sample: null },
-                  { type: 'other', label: 'سایر مدارک یا عکس نسخه', sample: null },
-                ].map((item) => {
-                  const isAttached = attachedDocs.some((d) => d.type === item.type);
-                  return (
-                    <button
-                      key={item.type}
-                      type="button"
-                      onClick={() => {
-                        if (item.sample) {
-                          handleAddSampleDoc(item.sample);
-                        } else {
-                          setDocCategory(item.type as any);
-                          setDocTitle(item.label);
-                          setShowUploadDraft(true);
-                        }
-                      }}
-                      className={`p-3 rounded-xl border text-right transition-all flex flex-col justify-between ${
-                        isAttached
-                          ? 'border-emerald-500 bg-emerald-50/50 shadow-xs'
-                          : 'border-slate-200 hover:border-rose-300 hover:bg-slate-50'
-                      }`}
+              <div className="mb-5 rounded-xl border border-slate-200 bg-white p-4 space-y-3">
+                <p className="text-xs leading-6 text-slate-600">
+                  فایل واقعی آزمایش، نوار قلب یا گزارش پزشکی را انتخاب کنید.
+                  فرمت‌های PDF، JPG، PNG و WebP تا سقف ۲۰ مگابایت پشتیبانی می‌شوند.
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <label className="block text-xs font-semibold text-slate-700">
+                    نوع مدرک
+                    <select
+                      value={documentType}
+                      onChange={(e) => setDocumentType(e.target.value as PendingMedicalDocument['type'])}
+                      className="mt-1 w-full rounded-lg border border-slate-300 p-2.5"
                     >
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-xs font-bold text-slate-800">{item.label}</span>
-                        {isAttached ? (
-                          <CheckCircle className="w-4 h-4 text-emerald-600" />
-                        ) : (
-                          <Plus className="w-3.5 h-3.5 text-slate-400" />
-                        )}
-                      </div>
-                      <span className="text-[10px] text-slate-500">
-                        {isAttached ? 'پیوست شده (مشاهده)' : '+ افزودن مدرک'}
-                      </span>
-                    </button>
-                  );
-                })}
+                      <option value="ecg">نوار قلب (ECG)</option>
+                      <option value="echo">اکوکاردیوگرافی</option>
+                      <option value="lab_enzymes">آزمایش خون و آنزیم‌های قلبی</option>
+                      <option value="holter">هولتر</option>
+                      <option value="angio">آنژیوگرافی</option>
+                      <option value="prescription">نسخه پزشکی</option>
+                      <option value="other">سایر مدارک</option>
+                    </select>
+                  </label>
+
+                  <label className="block text-xs font-semibold text-slate-700">
+                    عنوان مدرک (اختیاری)
+                    <input
+                      value={documentTitle}
+                      onChange={(e) => setDocumentTitle(e.target.value)}
+                      maxLength={200}
+                      placeholder="مثلاً نوار قلب امروز"
+                      className="mt-1 w-full rounded-lg border border-slate-300 p-2.5"
+                    />
+                  </label>
+
+                  <label className="block text-xs font-semibold text-slate-700">
+                    تاریخ مدرک (اختیاری)
+                    <input
+                      type="date"
+                      value={documentDate}
+                      onChange={(e) => setDocumentDate(e.target.value)}
+                      className="mt-1 w-full rounded-lg border border-slate-300 p-2.5"
+                    />
+                  </label>
+
+                  <label className="block text-xs font-semibold text-slate-700">
+                    توضیحات (اختیاری)
+                    <input
+                      value={documentNotes}
+                      onChange={(e) => setDocumentNotes(e.target.value)}
+                      maxLength={1000}
+                      placeholder="توضیح کوتاه درباره مدرک"
+                      className="mt-1 w-full rounded-lg border border-slate-300 p-2.5"
+                    />
+                  </label>
+                </div>
+
+                <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-rose-300 bg-rose-50 p-4 text-sm font-semibold text-rose-700 hover:bg-rose-100">
+                  <Upload className="h-4 w-4" />
+                  انتخاب فایل پزشکی
+                  <input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"
+                    className="sr-only"
+                    disabled={isSubmitting}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      e.target.value = '';
+                      if (!file) return;
+
+                      if (file.size === 0 || file.size > 20 * 1024 * 1024) {
+                        setSubmitError('حجم فایل باید بیشتر از صفر و حداکثر ۲۰ مگابایت باشد.');
+                        return;
+                      }
+
+                      const allowed = /\.(pdf|jpe?g|png|webp)$/i;
+                      if (!allowed.test(file.name)) {
+                        setSubmitError('فقط فایل‌های PDF، JPG، PNG و WebP مجاز هستند.');
+                        return;
+                      }
+
+                      if (attachedDocs.length >= 10) {
+                        setSubmitError('حداکثر ۱۰ مدرک را می‌توانید در این فرم انتخاب کنید.');
+                        return;
+                      }
+
+                      setSubmitError('');
+                      const title = documentTitle.trim() ||
+                        file.name.replace(/\.[^.]+$/, '');
+
+                      setAttachedDocs((previous) => [
+                        ...previous,
+                        {
+                          id: crypto.randomUUID(),
+                          type: documentType,
+                          title,
+                          date: documentDate,
+                          documentDate,
+                          fileName: file.name,
+                          fileSize: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
+                          notes: documentNotes.trim(),
+                          file,
+                        },
+                      ]);
+                      setDocumentTitle('');
+                    }}
+                  />
+                </label>
               </div>
 
               {/* List of currently attached documents */}
@@ -448,7 +444,7 @@ export const PatientInquiryForm: React.FC<Props> = ({ patient, onSubmit, onOpenE
                   attachedDocs.map((doc) => (
                     <div
                       key={doc.id}
-                      className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between gap-3 text-xs"
+                      className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs"
                     >
                       <div className="flex items-center gap-3 min-w-0">
                         <div className="p-2 bg-white rounded-lg border border-slate-200 text-rose-600 shrink-0">
@@ -463,16 +459,7 @@ export const PatientInquiryForm: React.FC<Props> = ({ patient, onSubmit, onOpenE
                       </div>
 
                       <div className="flex items-center gap-2 shrink-0">
-                        {doc.type === 'ecg' && (
-                          <button
-                            type="button"
-                            onClick={() => onOpenECGModal(doc)}
-                            className="px-2.5 py-1 bg-rose-100 hover:bg-rose-200 text-rose-800 rounded-lg font-semibold flex items-center gap-1 transition-colors"
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                            <span>نمایشگر لیدهای نوار قلب</span>
-                          </button>
-                        )}
+
                         <button
                           type="button"
                           onClick={() => setAttachedDocs(attachedDocs.filter((d) => d.id !== doc.id))}
@@ -487,101 +474,42 @@ export const PatientInquiryForm: React.FC<Props> = ({ patient, onSubmit, onOpenE
                 )}
               </div>
 
-              {/* Add custom document button */}
-              <div className="mt-3">
-                <button
-                  type="button"
-                  onClick={() => setShowUploadDraft(true)}
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-rose-600 hover:text-rose-700 p-1"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>آپلود مدرک جدید از دستگاه شما...</span>
-                </button>
-              </div>
             </div>
 
-            {/* Custom upload modal form */}
-            {showUploadDraft && (
-              <div className="p-4 bg-rose-50/70 border border-rose-200 rounded-xl space-y-3">
-                <h5 className="text-xs font-bold text-rose-900 flex items-center gap-1.5">
-                  <Upload className="w-3.5 h-3.5" />
-                  <span>افزودن مدرک پزشکی جدید:</span>
-                </h5>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">نوع مدرک:</label>
-                    <select
-                      value={docCategory}
-                      onChange={(e) => setDocCategory(e.target.value as any)}
-                      className="w-full p-2 rounded-lg border border-slate-300 bg-white"
-                    >
-                      <option value="ecg">نوار قلب (ECG)</option>
-                      <option value="echo">اکوکاردیوگرافی</option>
-                      <option value="lab_enzymes">آزمایش خون / آنزیم قلبی</option>
-                      <option value="holter">هولتر مانیتورینگ ۲۴ ساعته</option>
-                      <option value="angio">آنژیوگرافی / سی‌تی</option>
-                      <option value="other">سایر مدارک</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">عنوان مدرک:</label>
-                    <input
-                      type="text"
-                      value={docTitle}
-                      onChange={(e) => setDocTitle(e.target.value)}
-                      placeholder="مثال: آزمایش جدید تروپونین"
-                      className="w-full p-2 rounded-lg border border-slate-300 bg-white"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">توضیحات کوتاه یا نتیجه گزارش:</label>
-                  <input
-                    type="text"
-                    value={docNotes}
-                    onChange={(e) => setDocNotes(e.target.value)}
-                    placeholder="مثال: نوار قلب گرفته شده در ساعت ۱۲ ظهر درمانگاه"
-                    className="w-full p-2 rounded-lg border border-slate-300 bg-white text-xs"
-                  />
-                </div>
-                <div className="flex justify-end gap-2 pt-1">
-                  <button
-                    type="button"
-                    onClick={() => setShowUploadDraft(false)}
-                    className="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-200/50 rounded-lg"
-                  >
-                    انصراف
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleAddCustomDoc}
-                    className="px-3.5 py-1.5 text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white rounded-lg"
-                  >
-                    افزودن مدرک به لیست
-                  </button>
-                </div>
-              </div>
-            )}
-
             {/* Bottom Actions */}
-            <div className="pt-6 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
-              <button
-                type="button"
-                onClick={() => setFormStep(1)}
-                className="w-full sm:w-auto px-4 py-2 text-slate-600 hover:text-slate-900 text-xs font-semibold flex items-center justify-center gap-1.5"
-              >
-                <ArrowRight className="w-3.5 h-3.5" />
-                <span>بازگشت به مرحله قبلی</span>
-              </button>
+            <div className="pt-6 border-t border-slate-200 space-y-3">
+              {submitError && (
+                <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+                  {submitError}
+                </div>
+              )}
 
-              <button
-                type="button"
-                onClick={handleFinalSubmit}
-                className="w-full sm:w-auto px-6 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl shadow-md text-sm flex items-center justify-center gap-2"
-              >
-                <CheckCircle className="w-4 h-4" />
-                <span>ثبت نهایی و ارسال به تریاژ مرکز سلامت</span>
-              </button>
+              <p className="text-xs leading-5 text-slate-600">
+                پس از ثبت پرونده، فایل‌های انتخاب‌شده جداگانه بارگذاری می‌شوند.
+                اگر بارگذاری مدرکی شکست بخورد، شناسه پرونده برای پیگیری حفظ خواهد شد.
+              </p>
+
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                <button
+                  type="button"
+                  onClick={() => setFormStep(1)}
+                  disabled={isSubmitting}
+                  className="w-full sm:w-auto px-4 py-2 text-slate-600 hover:text-slate-900 text-xs font-semibold flex items-center justify-center gap-1.5 disabled:opacity-50"
+                >
+                  <ArrowRight className="w-3.5 h-3.5" />
+                  <span>بازگشت به مرحله قبلی</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleFinalSubmit}
+                  disabled={isSubmitting}
+                  className="w-full sm:w-auto px-6 py-2.5 bg-rose-600 hover:bg-rose-700 disabled:opacity-60 text-white font-bold rounded-xl shadow-md text-sm flex items-center justify-center gap-2"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  <span>{isSubmitting ? 'در حال ثبت...' : 'ثبت درخواست مشاوره'}</span>
+                </button>
+              </div>
             </div>
 
           </div>

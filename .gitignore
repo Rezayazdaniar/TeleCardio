@@ -6,3 +6,26 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Local backups and deployment snapshots
+backups/
+dist*.bak/
+*.bak
+*.backup
+*.backup-*
+*.pre-*
+*.before-*
+*.gemini-backup
+*.intake-backup-*
+
+# All local backup files
+*.bak*
+*.backup*
+*.pre-*
+*.before-*
+*.gemini-backup*
+*.intake-backup*
+*.intake-full-backup*
+*.intake-ui-backup*
+backups/
+dist*.bak/

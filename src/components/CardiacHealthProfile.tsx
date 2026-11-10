@@ -4,10 +4,8 @@ import {
   Trash2, Check, Eye, AlertCircle, Calendar, Sparkles, PhoneCall, Siren, Phone
 } from 'lucide-react';
 import { PatientUser, CardiacDocument, ConsultationInquiry } from '../types';
-import { SAMPLE_DOCUMENTS } from '../data/mockData';
 import { MedicationScheduleView } from './MedicationScheduleView';
 import { DrugInteractionChecker } from './DrugInteractionChecker';
-import { EmergencyContactsSection } from './EmergencyContactsSection';
 
 interface Props {
   patient: PatientUser;
@@ -26,17 +24,16 @@ export const CardiacHealthProfile: React.FC<Props> = ({
   recentConsultation,
   onTriggerPushAlert,
 }) => {
-  const [profileActiveTab, setProfileActiveTab] = useState<'records' | 'medication_schedule' | 'chronic_meds' | 'emergency'>('medication_schedule');
-  const [bloodPressure, setBloodPressure] = useState(patient.bloodPressure || '۱۳۵ / ۸۵ mmHg');
+  const [profileActiveTab, setProfileActiveTab] = useState<'records' | 'medication_schedule' | 'chronic_meds'>('medication_schedule');
+  const [bloodPressure, setBloodPressure] = useState(patient.bloodPressure || '');
   const [medications, setMedications] = useState<string[]>(patient.currentMedications);
   const [newMedInput, setNewMedInput] = useState('');
   
   const [medicalHistory, setMedicalHistory] = useState<string[]>(patient.medicalHistory);
   const [newHistoryInput, setNewHistoryInput] = useState('');
 
-  const [savedDocs, setSavedDocs] = useState<CardiacDocument[]>(SAMPLE_DOCUMENTS);
+  const [savedDocs, setSavedDocs] = useState<CardiacDocument[]>([]);
 
-  const primaryEmergencyContact = patient.emergencyContacts?.find(c => c.isPrimary) || patient.emergencyContacts?.[0];
 
   const handleAddMed = () => {
     if (!newMedInput.trim()) return;
@@ -73,10 +70,10 @@ export const CardiacHealthProfile: React.FC<Props> = ({
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
-            پرونده الکترونیک سلامت قلب و داروهای من (ص ۵ پتنت)
+            پرونده سلامت قلب و داروهای من
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            مدیریت سوابق بیماری‌های قلبی، برنامه زمان‌بندی هفتگی داروها، مخاطبین اضطراری و تست‌های پاراکلینیکی
+            مدیریت سوابق بیماری‌های قلبی، برنامه زمان‌بندی هفتگی داروها و تست‌های پاراکلینیکی
           </p>
         </div>
 
@@ -107,19 +104,6 @@ export const CardiacHealthProfile: React.FC<Props> = ({
           </button>
 
           <button
-            onClick={() => setProfileActiveTab('emergency')}
-            className={`flex-1 sm:flex-initial px-3.5 py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
-              profileActiveTab === 'emergency'
-                ? 'bg-red-600 text-white shadow-md'
-                : 'text-red-700 bg-red-50/80 hover:bg-red-100 border border-red-200/80'
-            }`}
-          >
-            <PhoneCall className="w-3.5 h-3.5 text-red-600" />
-            <span>مخاطبین اضطراری و ۱۱۵</span>
-            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-          </button>
-          
-          <button
             onClick={() => setProfileActiveTab('records')}
             className={`flex-1 sm:flex-initial px-3.5 py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
               profileActiveTab === 'records'
@@ -132,42 +116,6 @@ export const CardiacHealthProfile: React.FC<Props> = ({
           </button>
         </div>
       </div>
-
-      {/* Persistent Emergency Quick Bar across all tabs */}
-      {profileActiveTab !== 'emergency' && (
-        <div className="bg-gradient-to-r from-red-50 via-rose-50 to-amber-50 rounded-2xl border border-red-200/90 p-3 sm:p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-red-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-              <Siren className="w-4 h-4 animate-pulse" />
-            </div>
-            <div className="text-right">
-              <span className="font-bold text-xs text-red-900 block">
-                دسترسی سریع فوریت‌های قلبی (Urgent Cardiac Action):
-              </span>
-              <span className="text-[11px] text-red-700">
-                درد شدید قفسه سینه یا تنگی نفس حاد؟ فوراً با ۱۱۵ تماس بگیرید یا مخاطبان اضطراری خود را مطلع کنید.
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
-            <button
-              type="button"
-              onClick={() => setProfileActiveTab('emergency')}
-              className="px-3 py-1.5 bg-white text-red-700 hover:bg-red-50 border border-red-200 rounded-xl font-bold text-xs transition-colors"
-            >
-              مدیریت مخاطبین اضطراری
-            </button>
-            <a
-              href="tel:115"
-              className="px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-black text-xs flex items-center gap-1.5 shadow-sm transition-transform active:scale-95"
-            >
-              <PhoneCall className="w-3.5 h-3.5" />
-              <span>تماس فوری ۱۱۵</span>
-            </a>
-          </div>
-        </div>
-      )}
 
       {/* TAB 1: MEDICATION SCHEDULE */}
       {profileActiveTab === 'medication_schedule' && (
@@ -183,15 +131,6 @@ export const CardiacHealthProfile: React.FC<Props> = ({
         <div className="space-y-4">
           <DrugInteractionChecker />
         </div>
-      )}
-
-      {/* TAB 3: EMERGENCY CONTACTS & CALL 115 */}
-      {profileActiveTab === 'emergency' && (
-        <EmergencyContactsSection
-          patient={patient}
-          onUpdatePatient={onUpdatePatient}
-          onTriggerPushAlert={onTriggerPushAlert}
-        />
       )}
 
       {/* TAB 2: OVERVIEW & PARACLINICAL RECORDS */}
@@ -224,9 +163,9 @@ export const CardiacHealthProfile: React.FC<Props> = ({
           <div className="p-4 bg-rose-50/60 rounded-xl border border-rose-200 space-y-1">
             <span className="text-xs text-slate-500 block font-medium">آخرین فشار خون ثبت‌شده</span>
             <div className="flex items-center justify-between">
-              <span className="text-lg font-bold text-rose-700 font-mono">{bloodPressure}</span>
-              <span className="text-[10px] bg-rose-200/60 text-rose-800 px-2 py-0.5 rounded font-bold">
-                پایش منظم
+              <span className="text-lg font-bold text-rose-700 font-mono">{bloodPressure || "ثبت نشده"}</span>
+              <span className="text-[10px] text-slate-600 px-2 py-0.5 rounded font-bold">
+                {bloodPressure ? 'ثبت‌شده' : 'بدون داده'}
               </span>
             </div>
           </div>
@@ -234,9 +173,9 @@ export const CardiacHealthProfile: React.FC<Props> = ({
           <div className="p-4 bg-blue-50/60 rounded-xl border border-blue-200 space-y-1">
             <span className="text-xs text-slate-500 block font-medium">میانگین ضربان قلب استراحت</span>
             <div className="flex items-center justify-between">
-              <span className="text-lg font-bold text-blue-700 font-mono">۷۴ bpm</span>
-              <span className="text-[10px] bg-blue-200/60 text-blue-800 px-2 py-0.5 rounded font-bold">
-                طبیعی
+              <span className="text-lg font-bold text-blue-700 font-mono">ثبت نشده</span>
+              <span className="text-[10px] text-slate-600 px-2 py-0.5 rounded font-bold">
+                بدون داده
               </span>
             </div>
           </div>
@@ -244,9 +183,9 @@ export const CardiacHealthProfile: React.FC<Props> = ({
           <div className="p-4 bg-emerald-50/60 rounded-xl border border-emerald-200 space-y-1">
             <span className="text-xs text-slate-500 block font-medium">قدرت پمپاژ قلب (EF) در آخرین اکو</span>
             <div className="flex items-center justify-between">
-              <span className="text-lg font-bold text-emerald-700 font-mono">۵۵٪ (نرمال)</span>
-              <span className="text-[10px] bg-emerald-200/60 text-emerald-800 px-2 py-0.5 rounded font-bold">
-                اکو دکتر افشار
+              <span className="text-lg font-bold text-emerald-700 font-mono">ثبت نشده</span>
+              <span className="text-[10px] text-slate-600 px-2 py-0.5 rounded font-bold">
+                بدون داده
               </span>
             </div>
           </div>
@@ -373,60 +312,22 @@ export const CardiacHealthProfile: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* Emergency Contacts Quick Snapshot in Records Tab */}
-        <div className="bg-gradient-to-r from-red-50 to-rose-50 p-4 sm:p-5 rounded-2xl shadow-xs border border-red-200 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-red-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-              <PhoneCall className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h4 className="font-bold text-xs sm:text-sm text-red-950">
-                  مخاطب اصلی اضطراری: {primaryEmergencyContact ? `${primaryEmergencyContact.name} (${primaryEmergencyContact.relationship})` : 'ثبت نشده'}
-                </h4>
-                {primaryEmergencyContact && (
-                  <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-red-200/80 text-red-900 font-mono">
-                    {primaryEmergencyContact.phoneNumber}
-                  </span>
-                )}
-              </div>
-              <p className="text-[11px] text-red-700 mt-0.5">
-                دسترسی سریع به شماره‌های امدادی ۱۱۵ و مخاطبین محلی در زمان بروز علائم حاد قلبی
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
-            {primaryEmergencyContact && (
-              <a
-                href={`tel:${primaryEmergencyContact.phoneNumber}`}
-                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs flex items-center gap-1 shadow-xs transition-colors"
-              >
-                <Phone className="w-3.5 h-3.5" />
-                <span>تماس با {primaryEmergencyContact.relationship}</span>
-              </a>
-            )}
-            <button
-              type="button"
-              onClick={() => setProfileActiveTab('emergency')}
-              className="px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs flex items-center gap-1 shadow-xs transition-colors"
-            >
-              <span>مشاهده و ویرایش مخاطبین</span>
-            </button>
-          </div>
-        </div>
-
-      {/* Saved Cardiac Documents Repository */}
+{/* Saved Cardiac Documents Repository */}
       <div className="bg-white p-6 rounded-2xl shadow-xs border border-slate-200 space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
             <Activity className="w-4 h-4 text-rose-600" />
-            <span>آرشیو مدارک پاراکلینیکی قلب من (ثبت مدارک ص ۵ پتنت):</span>
+            <span>آرشیو مدارک پزشکی قلب من:</span>
           </h3>
           <span className="text-xs text-slate-500">{savedDocs.length} سند در پرونده</span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {savedDocs.length === 0 ? (
+          <p className="text-sm text-slate-500 py-4">
+            هنوز مدرک پزشکی ثبت نشده است.
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {savedDocs.map((doc) => (
             <div
               key={doc.id}
@@ -450,7 +351,8 @@ export const CardiacHealthProfile: React.FC<Props> = ({
               )}
             </div>
           ))}
-        </div>
+          </div>
+        )}
       </div>
         </div>
       )}

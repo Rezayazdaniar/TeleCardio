@@ -10,7 +10,6 @@ interface Props {
   onMarkAsRead: (id: string) => void;
   onMarkAllAsRead: () => void;
   onSelectNotification: (notif: InAppNotification) => void;
-  onTriggerSimulatedNotif?: () => void;
 }
 
 export const NotificationBell: React.FC<Props> = ({
@@ -18,7 +17,6 @@ export const NotificationBell: React.FC<Props> = ({
   onMarkAsRead,
   onMarkAllAsRead,
   onSelectNotification,
-  onTriggerSimulatedNotif,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -75,7 +73,7 @@ export const NotificationBell: React.FC<Props> = ({
 
       {/* Dropdown Panel */}
       {isOpen && (
-        <div className="absolute left-0 sm:left-auto sm:right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-slate-200 z-50 overflow-hidden text-right animate-in fade-in slide-in-from-top-2 duration-150">
+        <div className="fixed inset-x-3 top-20 w-auto max-h-[calc(100dvh-6rem)] sm:absolute sm:inset-x-auto sm:right-0 sm:top-auto sm:mt-2 sm:w-96 sm:max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-2xl border border-slate-200 z-50 overflow-hidden text-right animate-in fade-in slide-in-from-top-2 duration-150">
           
           {/* Header */}
           <div className="p-4 bg-gradient-to-r from-slate-900 to-rose-950 text-white flex items-center justify-between">
@@ -159,18 +157,8 @@ export const NotificationBell: React.FC<Props> = ({
             )}
           </div>
 
-          {/* Footer with Simulation Trigger */}
-          <div className="p-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-xs">
-            {onTriggerSimulatedNotif && (
-              <button
-                type="button"
-                onClick={onTriggerSimulatedNotif}
-                className="inline-flex items-center gap-1.5 text-[11px] text-rose-700 hover:text-rose-900 font-bold"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-rose-600" />
-                <span>شبیه‌سازی دریافت پاسخ جدید پزشک</span>
-              </button>
-            )}
+          {/* Footer */}
+          <div className="p-3 bg-slate-50 border-t border-slate-100 flex justify-end text-xs">
             <button
               onClick={() => setIsOpen(false)}
               className="text-slate-400 hover:text-slate-600 text-[11px]"

@@ -19,7 +19,7 @@ export const DisclaimerStep: React.FC<Props> = ({ onAccept, onDecline, onViewPat
       <div className="text-center mb-6">
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-rose-50 text-rose-700 text-xs font-semibold border border-rose-200 mb-3 shadow-xs">
           <HeartPulse className="w-4 h-4 text-rose-600 animate-pulse" />
-          <span>برگرفته از ایده و پتنت سامانه Tele D برای کلینیک مجازی قلب و عروق</span>
+          <span>شرایط استفاده از خدمات کلینیک مجازی قلب و عروق</span>
         </div>
         <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
           مرکز مشاوره پزشکی از راه دور قلب و عروق
@@ -29,13 +29,13 @@ export const DisclaimerStep: React.FC<Props> = ({ onAccept, onDecline, onViewPat
         </p>
       </div>
 
-      {/* Main Disclaimer Card - Replicating Patent Page 1 (صفحه اول پتنت) */}
+      {/* کارت توضیحات و سلب مسئولیت */}
       <div className="bg-white rounded-2xl shadow-xl border border-slate-200/90 overflow-hidden relative">
         <div className="bg-gradient-to-r from-rose-600 to-rose-700 text-white px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <ShieldCheck className="w-6 h-6 text-rose-200" />
             <div>
-              <h2 className="font-bold text-base sm:text-lg">قرارداد و تعهدنامه اولیه مشاوره (صفحه اول پتنت)</h2>
+              <h2 className="font-bold text-base sm:text-lg">شرایط و تعهدنامه مشاوره غیرحضوری</h2>
               <span className="text-xs text-rose-100">سامانه پایش غیرحضوری علائم قلبی و ارجاع تریاژ</span>
             </div>
           </div>
@@ -129,7 +129,7 @@ export const DisclaimerStep: React.FC<Props> = ({ onAccept, onDecline, onViewPat
                   className="px-3.5 py-2.5 rounded-xl text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors flex items-center gap-1.5"
                 >
                   <HelpCircle className="w-4 h-4" />
-                  <span>ایده‌های معماری پتنت</span>
+                  <span>راهنمای سامانه</span>
                 </button>
               )}
 

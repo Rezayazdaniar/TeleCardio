@@ -62,14 +62,6 @@ export const ClinicLandingHero: React.FC<Props> = ({
             <Menu className="w-6 h-6 stroke-[2.2]" />
           </button>
 
-          {/* Quick Emergency 115 badge */}
-          <button
-            onClick={onOpenEmergencyContacts}
-            className="px-2.5 py-1 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[11px] font-bold flex items-center gap-1 shadow-2xs transition-colors"
-          >
-            <PhoneCall className="w-3 h-3 text-rose-600 animate-pulse" />
-            <span>اورژانس ۱۱۵</span>
-          </button>
 
           {/* User Profile / Roles */}
           <button 
@@ -138,6 +130,19 @@ export const ClinicLandingHero: React.FC<Props> = ({
           </p>
         </div>
 
+        {/* TeleCardio heart-care hero image */}
+        <div className="w-full my-3 px-1">
+          <div className="relative w-full aspect-[3/1] overflow-hidden rounded-2xl border border-white/80 shadow-[0_8px_24px_-8px_rgba(15,23,42,0.22)] bg-white">
+            <img
+              src="/images/telecardio-heart-hero.png"
+              alt="دست‌هایی که قلبی قرمز را در بر گرفته‌اند؛ نمادی از مراقبت از سلامت قلب"
+              className="absolute inset-0 h-full w-full object-cover object-center"
+              loading="eager"
+              decoding="async"
+            />
+          </div>
+        </div>
+
         {/* Primary Interactive Triage Button: "بیا ببینیم توی چه ریسک قلبی هستی؟" */}
         <div className="w-full my-4 px-1">
           <button
@@ -188,17 +193,6 @@ export const ClinicLandingHero: React.FC<Props> = ({
               />
             </svg>
           </div>
-        </div>
-
-        {/* Login / Switch Button: "ورود ←" */}
-        <div className="w-full flex justify-center mb-6 px-1">
-          <button
-            onClick={onOpenLoginOrRoles}
-            className="w-44 py-3 rounded-full bg-[#1b739e] hover:bg-[#155e82] text-white font-bold text-sm shadow-[0_4px_16px_rgba(27,115,158,0.35)] flex items-center justify-center gap-2 active:scale-95 transition-all"
-          >
-            <span>ورود</span>
-            <ArrowLeft className="w-4 h-4 stroke-[2.5]" />
-          </button>
         </div>
 
         {/* Bottom Card: "سابقه چت / مشاهده گفتگوهای قبلی" */}
@@ -307,19 +301,6 @@ export const ClinicLandingHero: React.FC<Props> = ({
                   <ChevronLeft className="w-4 h-4 text-slate-400" />
                 </button>
 
-                <button
-                  onClick={() => {
-                    setDrawerOpen(false);
-                    onOpenEmergencyContacts();
-                  }}
-                  className="w-full flex items-center justify-between p-3 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs"
-                >
-                  <span className="flex items-center gap-2">
-                    <ShieldAlert className="w-4 h-4 text-rose-600" />
-                    <span>مخاطبین اضطراری و تماس ۱۱۵</span>
-                  </span>
-                  <PhoneCall className="w-4 h-4 text-rose-600" />
-                </button>
               </div>
             </div>
 
